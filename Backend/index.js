@@ -61,6 +61,27 @@ const generalLimiter = rateLimit({
 });
 app.use(generalLimiter);
 
+// ─── Health / Root Endpoint ───────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    message: "🛡️ Secure Task Portal API is running successfully!",
+    version: "1.0.0",
+    health: "ok",
+    endpoints: {
+      auth: "/auth",
+      users: "/users",
+      tasks: "/tasks",
+      notifications: "/notifications",
+      audit: "/audit",
+    },
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
