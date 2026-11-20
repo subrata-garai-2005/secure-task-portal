@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Calendar, Flag } from "lucide-react";
+import { Calendar, Flag, CheckCircle2 } from "lucide-react";
 import { formatTaskDate } from "../utils/date";
+import { fireConfetti, playSuccessChime } from "../utils/confetti";
 
 const priorityConfig = {
   critical: { color: "#FF5B5B", bg: "rgba(255, 91, 91, 0.15)", label: "Critical" },
@@ -9,10 +10,20 @@ const priorityConfig = {
   low: { color: "#00B69B", bg: "rgba(0, 182, 155, 0.15)", label: "Low" },
 };
 
-const TaskCard = ({ task, onClick, onDragStart }) => {
+const TaskCard = ({ task, onClick, onDragStart, onStatusChange, canEdit = true }) => {
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "done";
+  const isDone = task.status === "done";
   const dateFormatted = formatTaskDate(task.dueDate);
+
+  const handleQuickComplete = (e) => {
+    e.stopPropagation();
+    if (canEdit && !isDone && onStatusChange) {
+      fireConfetti();
+      playSuccessChime();
+      onStatusChange(task._id || task.id, "done");
+    }
+  };
 
   return (
     <motion.div
@@ -72,7 +83,24 @@ const TaskCard = ({ task, onClick, onDragStart }) => {
             )}
           </div>
 
-          <div className="task-card__actions">
+          <div className="task-card__actions flex items-center gap-1.5">
+            {/* Quick Complete Button */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleQuickComplete}
+                className={`p-1 rounded-md transition-colors ${
+                  isDone
+                    ? "text-[#00B69B] opacity-90 cursor-default"
+                    : "text-gray-400 hover:text-[#00B69B] hover:bg-[#00B69B]/10 cursor-pointer"
+                }`}
+                title={isDone ? "Completed" : "Mark as completed (🎉)"}
+                aria-label="Toggle Complete"
+              >
+                <CheckCircle2 size={14} className={isDone ? "fill-[#00B69B]/20" : ""} />
+              </button>
+            )}
+
             {/* Assignee avatar */}
             {task.assignee && (
               <span

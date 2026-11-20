@@ -6,6 +6,7 @@ import TaskModal from "../components/TaskModal";
 import SecurityWarningModal from "../components/SecurityWarningModal";
 import SkeletonLoader from "../components/SkeletonLoader";
 import { motion, AnimatePresence } from "framer-motion";
+import { fireConfetti, playSuccessChime } from "../utils/confetti";
 import {
   LayoutGrid, List, Plus, Search, Flag, ClipboardList,
   Calendar, User as UserIcon
@@ -59,6 +60,10 @@ const TasksPage = () => {
     try {
       await api.updateTaskStatus(token, taskId, newStatus);
       setTasks((prev) => prev.map((t) => ((t._id || t.id) === taskId ? { ...t, status: newStatus } : t)));
+      if (newStatus === "done") {
+        fireConfetti();
+        playSuccessChime();
+      }
     } catch (err) {
       console.error("Failed to update status:", err);
     }
@@ -68,9 +73,17 @@ const TasksPage = () => {
     if (isNew) {
       const data = await api.createTask(token, payload);
       setTasks((prev) => [data.task, ...prev]);
+      if (payload.status === "done") {
+        fireConfetti();
+        playSuccessChime();
+      }
     } else {
       const data = await api.updateTask(token, taskId, payload);
       setTasks((prev) => prev.map((t) => ((t._id || t.id) === taskId ? data.task : t)));
+      if (payload.status === "done") {
+        fireConfetti();
+        playSuccessChime();
+      }
     }
   };
 

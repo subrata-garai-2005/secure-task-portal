@@ -2,7 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, ListTodo, BarChart3, Users, Settings, Activity,
-  ShieldCheck, LogOut, ChevronLeft, ChevronRight, Layers, User
+  ShieldCheck, LogOut, ChevronLeft, ChevronRight, Layers, User, Zap
 } from "lucide-react";
 
 const navGroups = [
@@ -20,6 +20,7 @@ const navGroups = [
       { id: "users", label: "Users", icon: Users, adminOnly: true },
       { id: "activity", label: "Activity Logs", icon: Activity },
       { id: "owasp", label: "OWASP Security", icon: ShieldCheck },
+      { id: "demo", label: "Security Sandbox", icon: Zap },
     ],
   },
   {

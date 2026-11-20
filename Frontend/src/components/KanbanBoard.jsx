@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import TaskCard from "./TaskCard";
 import { Plus, CircleDot, Clock, Eye, CheckCircle2 } from "lucide-react";
+import { fireConfetti, playSuccessChime } from "../utils/confetti";
 
 const columns = [
   { id: "todo", label: "To Do", icon: CircleDot, color: "#64748B" },
@@ -34,6 +35,10 @@ const KanbanBoard = ({ tasks = [], onTaskClick, onStatusChange, onAddTask, canEd
     const fromStatus = e.dataTransfer.getData("fromStatus");
     if (fromStatus && fromStatus !== toStatus) {
       onStatusChange?.(taskId, toStatus);
+      if (toStatus === "done") {
+        fireConfetti();
+        playSuccessChime();
+      }
     }
   };
 
@@ -78,6 +83,8 @@ const KanbanBoard = ({ tasks = [], onTaskClick, onStatusChange, onAddTask, canEd
                     task={task}
                     onClick={onTaskClick}
                     onDragStart={handleDragStart}
+                    onStatusChange={onStatusChange}
+                    canEdit={canEdit}
                   />
                 ))}
               </AnimatePresence>

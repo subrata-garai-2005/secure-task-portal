@@ -25,6 +25,7 @@ import AnalyticsPage from "./AnalyticsPage";
 import ProfilePage from "./ProfilePage";
 import SettingsPage from "./SettingsPage";
 import ActivityPage from "./ActivityPage";
+import SecurityDemoModal from "../components/SecurityDemoModal";
 
 const Dashboard = () => {
   const { token, user, logout } = useAuth();
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [warning, setWarning] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showSecurityDemo, setShowSecurityDemo] = useState(false);
   const [threatsBlocked, setThreatsBlocked] = useState(0);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -160,6 +162,33 @@ const Dashboard = () => {
         return <SettingsPage />;
       case "activity":
         return <ActivityPage />;
+      case "demo":
+        return (
+          <div className="page">
+            <div className="page__header">
+              <div>
+                <h1 className="page__title">Cyber Defense &amp; Security Sandbox</h1>
+                <p className="page__subtitle">Interactive live testing environment for In-App WAF and Credential Scanner</p>
+              </div>
+            </div>
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-8 text-center max-w-xl mx-auto mt-6 shadow-sm flex flex-col items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#4880FF]/15 border border-[#4880FF]/30 text-[#4880FF] flex items-center justify-center">
+                <ShieldAlert size={28} />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Test Real-Time Cyber Interception</h3>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                Launch real-world SQL Injection, XSS payloads, or API credential leaks. Watch the portal&apos;s client &amp; server defensive gates neutralize threats with zero latency.
+              </p>
+              <button
+                onClick={() => setShowSecurityDemo(true)}
+                className="btn btn--primary py-2.5 px-6 font-bold text-xs flex items-center gap-2 mt-2 shadow-lg shadow-[#4880FF]/25 cursor-pointer"
+              >
+                <Zap size={14} className="text-amber-300 fill-amber-300" />
+                <span>Launch Interactive Sandbox</span>
+              </button>
+            </div>
+          </div>
+        );
 
       case "users":
         return (
@@ -567,6 +596,15 @@ const Dashboard = () => {
           </div>
 
           <div className="topbar__right">
+            <button
+              onClick={() => setShowSecurityDemo(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-[#4880FF] text-xs font-bold transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
+              title="Interactive Cyber Threat Sandbox & Payload Simulator"
+            >
+              <Zap size={13} className="text-amber-400 fill-amber-400" />
+              <span className="hidden sm:inline">Security Demo</span>
+            </button>
+
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Shield Active</span>
@@ -659,6 +697,15 @@ const Dashboard = () => {
         >
           {renderPage()}
         </motion.div>
+
+        {/* Security Sandbox Demo Modal */}
+        <SecurityDemoModal
+          isOpen={showSecurityDemo}
+          onClose={() => setShowSecurityDemo(false)}
+          onTriggerAlert={(threat) => {
+            handleWarning(threat);
+          }}
+        />
       </main>
     </div>
   );
