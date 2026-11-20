@@ -46,8 +46,16 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || (origin && origin.endsWith(".vercel.app"))) cb(null, true);
-    else cb(new Error("CORS policy violation"));
+    if (
+      !origin ||
+      ALLOWED_ORIGINS.includes(origin) ||
+      (origin && origin.endsWith(".vercel.app")) ||
+      (origin && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("CORS policy violation"));
+    }
   },
   credentials: true,
 }));
