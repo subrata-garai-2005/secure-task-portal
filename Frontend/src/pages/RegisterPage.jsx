@@ -4,7 +4,7 @@ import { scanInputs } from "../utils/attackDetection";
 import { validatePassword } from "../utils/validatePassword";
 import SecurityWarningModal from "../components/SecurityWarningModal";
 import PasswordStrength from "../components/PasswordStrength";
-import { Layers, CheckCircle2, AlertCircle, ArrowRight, Shield } from "lucide-react";
+import { Layers, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 
 const RegisterPage = ({ onSwitch }) => {
   const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
@@ -193,16 +193,6 @@ const RegisterPage = ({ onSwitch }) => {
           <button onClick={onSwitch} className="auth-switch-link">
             Already have an account? <span className="font-bold underline">Sign In</span>
           </button>
-        </div>
-
-        {/* Security Trust Badges */}
-        <div className="auth-trust-badges flex items-center justify-center gap-2 flex-wrap">
-          {["JWT Auth", "Rate Limited", "XSS Protected", "Payload Detection"].map((item) => (
-            <span key={item} className="badge badge--info text-[11px]">
-              <Shield size={12} />
-              {item}
-            </span>
-          ))}
         </div>
       </div>
     </div>

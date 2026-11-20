@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { scanInputs } from "../utils/attackDetection";
 import SecurityWarningModal from "../components/SecurityWarningModal";
-import { Layers, ArrowRight, AlertCircle, Shield, Eye, EyeOff } from "lucide-react";
+import { Layers, ArrowRight, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 const LoginPage = ({ onSwitch }) => {
   const { login } = useAuth();
@@ -161,22 +161,6 @@ const LoginPage = ({ onSwitch }) => {
           <button onClick={onSwitch} className="auth-switch-link">
             Don't have an account? <span className="font-bold underline">Create Account</span>
           </button>
-
-          <div className="auth-footer">
-            <div className="auth-demo-box">
-              Demo Credentials: <strong>admin</strong> / <strong>Admin@123</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Security Trust Badges */}
-        <div className="auth-trust-badges flex items-center justify-center gap-2 flex-wrap">
-          {["JWT Auth", "Rate Limited", "XSS Protected", "Payload Detection"].map((item) => (
-            <span key={item} className="badge badge--info text-[11px]">
-              <Shield size={12} />
-              {item}
-            </span>
-          ))}
         </div>
       </div>
     </div>
