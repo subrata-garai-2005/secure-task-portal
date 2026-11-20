@@ -50,6 +50,7 @@ app.use(cors({
       !origin ||
       ALLOWED_ORIGINS.includes(origin) ||
       (origin && origin.endsWith(".vercel.app")) ||
+      (origin && origin.endsWith(".pages.dev")) ||
       (origin && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
     ) {
       cb(null, true);

@@ -39,7 +39,7 @@ const LoginPage = ({ onSwitch }) => {
       console.error("Login failed:", e);
       const data = e.response?.data;
       if (e.code === "ERR_NETWORK" || e.message?.includes("Network Error")) {
-        setError("Cannot connect to server. Please verify the backend is running on port 3001.");
+        setError("Cannot connect to server. Please verify backend is running and VITE_API_URL is configured.");
         return;
       }
 

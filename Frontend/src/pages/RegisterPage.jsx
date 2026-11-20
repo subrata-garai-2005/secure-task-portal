@@ -51,7 +51,7 @@ const RegisterPage = ({ onSwitch }) => {
     } catch (e) {
       console.error("Registration error:", e);
       if (e.code === "ERR_NETWORK" || e.message?.includes("Network Error")) {
-        setError("Cannot connect to server. Please verify the backend is running on port 3001.");
+        setError("Cannot connect to server. Please verify backend is running and VITE_API_URL is configured.");
         return;
       }
       const data = e.response?.data;
