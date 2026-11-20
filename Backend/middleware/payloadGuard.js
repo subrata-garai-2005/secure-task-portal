@@ -15,12 +15,17 @@ const detectPayload = (value) => {
   return { detected: false };
 };
 
+const SENSITIVE_FIELDS = new Set([
+  "password", "currentPassword", "newPassword", "confirm", "confirmPassword"
+]);
+
 /**
  * Recursively scans all values in an object.
  */
 const scanObject = (obj) => {
   if (!obj || typeof obj !== "object") return null;
   for (const [key, val] of Object.entries(obj)) {
+    if (SENSITIVE_FIELDS.has(key)) continue;
     if (typeof val === "string") {
       const result = detectPayload(val);
       if (result.detected) return { ...result, field: key };

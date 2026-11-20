@@ -4,6 +4,7 @@ import { scanInputs } from "../utils/attackDetection";
 import { validatePassword } from "../utils/validatePassword";
 import SecurityWarningModal from "../components/SecurityWarningModal";
 import PasswordStrength from "../components/PasswordStrength";
+import { Layers, CheckCircle2, AlertCircle, ArrowRight, Shield } from "lucide-react";
 
 const RegisterPage = ({ onSwitch }) => {
   const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
@@ -14,104 +15,194 @@ const RegisterPage = ({ onSwitch }) => {
 
   const handle = async () => {
     const { username, email, password, confirm } = form;
-    if (!username || !email || !password || !confirm) { setError("All fields are required."); return; }
+    if (!username.trim() || !email.trim() || !password || !confirm) {
+      setError("All fields are required.");
+      return;
+    }
 
-    // ─── PAYLOAD DETECTION ───
+    // ─── PAYLOAD DETECTION (Scan for XSS / SQLi) ───
     const threat = scanInputs({ username, email });
-    if (threat) { setWarning(threat); return; }
+    if (threat) {
+      setWarning(threat);
+      return;
+    }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Invalid email address."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please provide a valid email address.");
+      return;
+    }
+
     const checks = validatePassword(password);
-    if (!Object.values(checks).every(Boolean)) { setError("Password does not meet requirements."); return; }
-    if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (!Object.values(checks).every(Boolean)) {
+      setError("Password must have at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.");
+      return;
+    }
+
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
 
     setLoading(true);
     setError("");
     try {
-      await api.register(username, email, password);
+      await api.register(username.trim(), email.trim(), password);
       setSuccess(true);
     } catch (e) {
+      console.error("Registration error:", e);
+      if (e.code === "ERR_NETWORK" || e.message?.includes("Network Error")) {
+        setError("Cannot connect to server. Please verify the backend is running on port 3001.");
+        return;
+      }
       const data = e.response?.data;
-      if (data?.errors) {
+      if (data?.errors && Array.isArray(data.errors)) {
         setError(data.errors.map((err) => err.msg).join(", "));
       } else {
-        setError(data?.error || "Registration failed. Please try again.");
+        setError(data?.error || data?.message || "Registration failed. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="text-center">
-        <div className="text-5xl mb-4">✅</div>
-        <h2 className="text-xl font-bold text-white mb-2">Account created!</h2>
-        <p className="text-gray-400 text-sm mb-6">You can now sign in with your credentials.</p>
-        <button onClick={onSwitch} className="text-sm text-emerald-400 hover:text-emerald-300">← Back to login</button>
+  if (success) {
+    return (
+      <div className="auth-wrapper">
+        <div className="auth-container">
+          <div className="auth-card" style={{ textAlign: "center", alignItems: "center" }}>
+            <div className="auth-brand__icon" style={{ margin: "0 auto 12px auto" }}>
+              <CheckCircle2 size={30} />
+            </div>
+            <h2 className="auth-card__title" style={{ fontSize: "22px" }}>Account Created</h2>
+            <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: "1.5", margin: "4px 0 16px 0" }}>
+              Your credentials have been securely provisioned. You can now sign in with your username and password.
+            </p>
+            <button
+              onClick={onSwitch}
+              className="auth-btn-submit"
+            >
+              Proceed to Sign In <ArrowRight size={15} />
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <div className="auth-wrapper">
       {warning && <SecurityWarningModal attackType={warning} onClose={() => setWarning(null)} />}
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
-            <span className="text-3xl">🛡️</span>
+
+      <div className="auth-container">
+        {/* Brand Header */}
+        <div className="auth-brand">
+          <div className="auth-brand__icon">
+            <Layers size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Create Account</h1>
-          <p className="text-gray-400 text-sm mt-1">Secure registration</p>
+          <h1 className="auth-brand__title">
+            Dash<span>Stack</span>
+          </h1>
+          <p className="auth-brand__subtitle">Enterprise Access & Secure Task Management</p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+        {/* Card */}
+        <div className="auth-card">
+          <div className="auth-card__header">
+            <div>
+              <h2 className="auth-card__title">Create Account</h2>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Sign up for a secure account</p>
+            </div>
+            <span className="badge badge--success">OWASP A07</span>
+          </div>
+
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              ⚠ {error}
+            <div className="auth-alert auth-alert--error">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-4">
-            {[
-              { key: "username", label: "Username", type: "text", ph: "johndoe" },
-              { key: "email", label: "Email", type: "email", ph: "john@example.com" },
-            ].map(({ key, label, type, ph }) => (
-              <div key={key}>
-                <label className="block text-sm text-gray-400 mb-1.5">{label}</label>
-                <input type={type} value={form[key]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder={ph} />
-              </div>
-            ))}
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Password</label>
-              <input type="password" value={form.password}
+          <div className="auth-form">
+            <div className="auth-field">
+              <label htmlFor="reg-username">Username</label>
+              <input
+                id="reg-username"
+                type="text"
+                autoComplete="username"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handle()}
+                className="auth-input"
+                placeholder="e.g. sarah_connor"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="reg-email">Email Address</label>
+              <input
+                id="reg-email"
+                type="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handle()}
+                className="auth-input"
+                placeholder="sarah@example.com"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="reg-password">Password</label>
+              <input
+                id="reg-password"
+                type="password"
+                autoComplete="new-password"
+                value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="••••••••" />
+                onKeyDown={(e) => e.key === "Enter" && handle()}
+                className="auth-input"
+                placeholder="••••••••"
+              />
               {form.password && <PasswordStrength password={form.password} />}
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Confirm Password</label>
-              <input type="password" value={form.confirm}
+
+            <div className="auth-field">
+              <label htmlFor="reg-confirm">Confirm Password</label>
+              <input
+                id="reg-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="••••••••" />
+                onKeyDown={(e) => e.key === "Enter" && handle()}
+                className="auth-input"
+                placeholder="••••••••"
+              />
             </div>
-          </div>
 
-          <button onClick={handle} disabled={loading}
-            className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-700 disabled:text-gray-500 text-gray-950 font-semibold py-3 rounded-xl transition-all duration-200 text-sm">
-            {loading ? "Creating Account…" : "Create Account"}
-          </button>
-
-          <div className="mt-4 text-center">
-            <button onClick={onSwitch} className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
-              Already have an account? Sign in →
+            <button
+              onClick={handle}
+              disabled={loading}
+              className="auth-btn-submit"
+            >
+              {loading ? "Creating Account…" : "Create Account"}
+              {!loading && <ArrowRight size={15} />}
             </button>
           </div>
+
+          <button onClick={onSwitch} className="auth-switch-link">
+            Already have an account? <span className="font-bold underline">Sign In</span>
+          </button>
+        </div>
+
+        {/* Security Trust Badges */}
+        <div className="auth-trust-badges flex items-center justify-center gap-2 flex-wrap">
+          {["JWT Auth", "Rate Limited", "XSS Protected", "Payload Detection"].map((item) => (
+            <span key={item} className="badge badge--info text-[11px]">
+              <Shield size={12} />
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </div>

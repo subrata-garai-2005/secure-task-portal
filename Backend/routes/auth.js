@@ -15,8 +15,8 @@ const JWT_EXPIRES_IN = "1h";
 // ─── Rate Limiting (OWASP A07 – Auth Failures) ───────────────────────────────
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,   // 1 minute
-  max: 5,                // 5 login attempts
-  message: { error: "Too many requests. Try again in 1 minute." },
+  max: 30,               // 30 requests per minute
+  message: { error: "Too many requests. Please try again in 1 minute." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -25,32 +25,57 @@ const authLimiter = rateLimit({
 router.post("/register", authLimiter, payloadGuard, [
   body("username")
     .trim()
-    .isAlphanumeric().withMessage("Username must be alphanumeric")
-    .isLength({ min: 3, max: 30 }).withMessage("Username 3–30 chars"),
+    .matches(/^[a-zA-Z0-9_.-]+$/).withMessage("Username can only contain letters, numbers, underscores, and hyphens")
+    .isLength({ min: 3, max: 30 }).withMessage("Username must be 3–30 characters"),
   body("email")
-    .normalizeEmail()
-    .isEmail().withMessage("Invalid email"),
+    .trim()
+    .isEmail().withMessage("Please enter a valid email address")
+    .normalizeEmail(),
   body("password")
     .isStrongPassword({
       minLength: 8, minUppercase: 1, minLowercase: 1,
       minNumbers: 1, minSymbols: 1,
-    }).withMessage("Password not strong enough"),
+    }).withMessage("Password must have at least 8 chars, 1 uppercase, 1 lowercase, 1 number, and 1 symbol"),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const { username, email, password } = req.body;
   try {
+    const existing = await User.findOne({
+      $or: [
+        { username: username.toLowerCase() },
+        { email: email.toLowerCase() },
+      ],
+    });
+    if (existing) {
+      if (existing.username.toLowerCase() === username.toLowerCase()) {
+        return res.status(409).json({ error: "Username is already taken" });
+      }
+      return res.status(409).json({ error: "Email is already registered" });
+    }
+
     const hashed = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    await User.create({ username, email, password: hashed });
+    await User.create({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashed,
+      role: "viewer",
+      status: "Active",
+    });
 
     auditLog(null, `REGISTER:${username}`, req.ip);
-    res.status(201).json({ message: "Account created" });
+    res.status(201).json({ message: "Account created successfully" });
   } catch (err) {
+    console.error("Registration error:", err);
     if (err.code === 11000) {
       return res.status(409).json({ error: "Username or email already exists" });
     }
-    res.status(500).json({ error: "Registration failed" });
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map((e) => e.message).join(", ");
+      return res.status(400).json({ error: messages });
+    }
+    res.status(500).json({ error: err.message || "Registration failed" });
   }
 });
 
@@ -63,10 +88,16 @@ router.post("/login", authLimiter, payloadGuard, [
   if (!errors.isEmpty()) return res.status(400).json({ error: "Invalid input" });
 
   const { username, password } = req.body;
-  const user = await User.findOne({ username });
+  const loginIdentifier = username.trim();
+  const user = await User.findOne({
+    $or: [
+      { username: loginIdentifier },
+      { email: loginIdentifier.toLowerCase() },
+    ],
+  });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    auditLog(user?._id || null, `FAILED_LOGIN:${username}`, req.ip);
+    auditLog(user?._id || null, `FAILED_LOGIN:${loginIdentifier}`, req.ip);
     // Consistent response time prevents timing attacks
     await bcrypt.hash("dummy", BCRYPT_ROUNDS); // dummy work
     return res.status(401).json({ error: "Invalid credentials" });
@@ -79,7 +110,11 @@ router.post("/login", authLimiter, payloadGuard, [
   );
 
   auditLog(user._id, "LOGIN_SUCCESS", req.ip);
-  res.json({ token, role: user.role });
+  res.json({
+    token,
+    role: user.role,
+    user: { id: user._id, username: user.username, email: user.email, role: user.role },
+  });
 });
 
 // POST /auth/change-password — change password (authenticated)

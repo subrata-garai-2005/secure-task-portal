@@ -67,6 +67,7 @@ router.post("/", authenticate, requireRole("admin"), payloadGuard, [
     .normalizeEmail()
     .isEmail().withMessage("Invalid email"),
   body("password")
+    .optional()
     .isStrongPassword({
       minLength: 8, minUppercase: 1, minLowercase: 1,
       minNumbers: 1, minSymbols: 1,
@@ -77,23 +78,50 @@ router.post("/", authenticate, requireRole("admin"), payloadGuard, [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { username, email, password, role } = req.body;
+  const { username, email, password = "User@12345", role } = req.body;
   try {
     const hashed = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const user = await User.create({
-      username, email, password: hashed, role, status: "Active",
+      username, email, password: hashed, role, status: req.body.status || "Active",
     });
 
     auditLog(req.user.id, `CREATE_USER:${username}:${role}`, req.ip);
     res.status(201).json({
       message: "User created successfully",
-      user: { id: user._id, username, email, role, status: "Active" },
+      user: { id: user._id, username, email, role, status: user.status },
     });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ error: "Username or email already exists" });
     }
     res.status(500).json({ error: "User creation failed" });
+  }
+});
+
+// DELETE /users/:id — admin only, delete user
+router.delete("/:id", authenticate, requireRole("admin"), async (req, res) => {
+  const userId = req.params.id;
+
+  if (req.user.id === userId) {
+    return res.status(400).json({ error: "Cannot delete your own account" });
+  }
+
+  try {
+    const userToDelete = await User.findById(userId);
+    if (!userToDelete) return res.status(404).json({ error: "User not found" });
+
+    if (userToDelete.role === "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount <= 1) {
+        return res.status(400).json({ error: "Cannot delete the sole administrator account" });
+      }
+    }
+
+    await User.findByIdAndDelete(userId);
+    auditLog(req.user.id, `DELETE_USER:${userToDelete.username}`, req.ip);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "User deletion failed" });
   }
 });
 

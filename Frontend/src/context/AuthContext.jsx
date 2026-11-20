@@ -1,33 +1,28 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, createContext, useContext } from "react";
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("jwt_token"));
-
-  useEffect(() => {
-    if (token) {
-      try {
-        // Decode JWT payload (base64) — never trust this for auth, only display
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (payload.exp * 1000 > Date.now()) {
-          setUser({ username: payload.sub, role: payload.role });
-        } else {
-          logout();
-        }
-      } catch {
-        logout();
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("jwt_token");
+    if (!saved) return null;
+    try {
+      const parts = saved.split(".");
+      if (parts.length < 2) return null;
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload.exp && payload.exp * 1000 > Date.now()) {
+        return { id: payload.id, username: payload.sub, role: payload.role };
       }
+      localStorage.removeItem("jwt_token");
+      return null;
+    } catch {
+      localStorage.removeItem("jwt_token");
+      return null;
     }
-  }, [token]);
-
-  const login = (jwt) => {
-    localStorage.setItem("jwt_token", jwt);
-    setToken(jwt);
-  };
+  });
 
   const logout = () => {
     localStorage.removeItem("jwt_token");
@@ -35,8 +30,24 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const login = (jwt) => {
+    localStorage.setItem("jwt_token", jwt);
+    setToken(jwt);
+    try {
+      const parts = jwt.split(".");
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1]));
+        setUser({ id: payload.id, username: payload.sub, role: payload.role });
+      } else {
+        setUser({ username: "user", role: "viewer" });
+      }
+    } catch {
+      setUser(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

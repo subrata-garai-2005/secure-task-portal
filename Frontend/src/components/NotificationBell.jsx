@@ -1,17 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import {
+  Bell, CheckCheck, ClipboardList, FileEdit, CheckCircle2,
+  MessageSquare, Clock, ShieldAlert, Info
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatTimeAgo } from "../utils/date";
 
-const typeIcons = {
-  task_assigned: "📋",
-  task_updated: "✏️",
-  task_completed: "✅",
-  comment_added: "💬",
-  due_reminder: "⏰",
-  security_alert: "🚨",
-  system: "ℹ️",
+const renderTypeIcon = (type) => {
+  const iconProps = { size: 14, className: "shrink-0" };
+  switch (type) {
+    case "task_assigned":
+      return <ClipboardList {...iconProps} className="text-blue-400 shrink-0" />;
+    case "task_updated":
+      return <FileEdit {...iconProps} className="text-amber-400 shrink-0" />;
+    case "task_completed":
+      return <CheckCircle2 {...iconProps} className="text-emerald-400 shrink-0" />;
+    case "comment_added":
+      return <MessageSquare {...iconProps} className="text-purple-400 shrink-0" />;
+    case "due_reminder":
+      return <Clock {...iconProps} className="text-orange-400 shrink-0" />;
+    case "security_alert":
+      return <ShieldAlert {...iconProps} className="text-red-400 shrink-0" />;
+    default:
+      return <Info {...iconProps} className="text-zinc-400 shrink-0" />;
+  }
 };
 
 const NotificationBell = () => {
@@ -20,28 +34,31 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
     try {
       const data = await api.getNotifications(token);
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
-    } catch (err) {
-      // silently fail
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
+    } catch (_err) {
+      // Ignore polling errors
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // poll every 30s
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [token]);
+  }, [fetchNotifications]);
 
   const markRead = async (id) => {
     try {
       await api.markNotificationRead(token, id);
-      setNotifications((prev) => prev.map((n) => n._id === id ? { ...n, read: true } : n));
+      setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
       setUnreadCount((c) => Math.max(0, c - 1));
-    } catch (err) {}
+    } catch (_err) {
+      // ignore
+    }
   };
 
   const markAllRead = async () => {
@@ -49,23 +66,19 @@ const NotificationBell = () => {
       await api.markAllNotificationsRead(token);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
-    } catch (err) {}
-  };
-
-  const timeAgo = (date) => {
-    const diff = Date.now() - new Date(date).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    } catch (_err) {
+      // ignore
+    }
   };
 
   return (
     <div className="notification-bell">
-      <button onClick={() => setOpen(!open)} className="notification-bell__btn">
+      <button
+        onClick={() => setOpen(!open)}
+        className="notification-bell__btn"
+        aria-label="Notifications"
+        title="Notifications"
+      >
         <Bell size={18} />
         {unreadCount > 0 && (
           <motion.span
@@ -83,9 +96,9 @@ const NotificationBell = () => {
           <>
             <div className="notification-bell__overlay" onClick={() => setOpen(false)} />
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ duration: 0.15 }}
               className="notification-bell__dropdown"
             >
@@ -100,26 +113,22 @@ const NotificationBell = () => {
 
               <div className="notification-bell__list">
                 {notifications.length === 0 ? (
-                  <div className="notification-bell__empty">
-                    <Bell size={24} strokeWidth={1} />
-                    <span>No notifications yet</span>
-                  </div>
+                  <div className="notification-bell__empty">No notifications</div>
                 ) : (
                   notifications.map((n) => (
                     <div
                       key={n._id}
-                      className={`notification-bell__item ${!n.read ? "notification-bell__item--unread" : ""}`}
+                      className={`notification-item ${!n.read ? "notification-item--unread" : ""}`}
                       onClick={() => !n.read && markRead(n._id)}
                     >
-                      <span className="notification-bell__icon">{typeIcons[n.type] || "📌"}</span>
-                      <div className="notification-bell__content">
-                        <span className="notification-bell__item-title">{n.title}</span>
-                        <span className="notification-bell__message">{n.message}</span>
-                        <span className="notification-bell__time">{timeAgo(n.createdAt)}</span>
+                      <span className="notification-item__icon">{renderTypeIcon(n.type)}</span>
+                      <div className="notification-item__content">
+                        <div className="notification-item__top">
+                          <span className="notification-item__title">{n.title}</span>
+                          <span className="notification-item__time">{formatTimeAgo(n.createdAt)}</span>
+                        </div>
+                        <p className="notification-item__msg">{n.message}</p>
                       </div>
-                      {!n.read && (
-                        <span className="notification-bell__dot" />
-                      )}
                     </div>
                   ))
                 )}

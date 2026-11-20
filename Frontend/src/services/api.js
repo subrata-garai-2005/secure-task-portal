@@ -29,8 +29,22 @@ const api = {
     return res.data;
   },
 
+  async createUser(token, userData) {
+    const res = await axios.post(`${API_BASE}/users`, userData, {
+      headers: authHeaders(token),
+    });
+    return res.data;
+  },
+
   async updateUser(token, id, updates) {
     const res = await axios.put(`${API_BASE}/users/${id}`, updates, {
+      headers: authHeaders(token),
+    });
+    return res.data;
+  },
+
+  async deleteUser(token, id) {
+    const res = await axios.delete(`${API_BASE}/users/${id}`, {
       headers: authHeaders(token),
     });
     return res.data;

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { motion } from "framer-motion";
-import { User, Mail, Shield, Calendar, Key, CheckCircle } from "lucide-react";
+import { Mail, Shield, Calendar, Key, CheckCircle, UserCheck } from "lucide-react";
 import PasswordStrength from "../components/PasswordStrength";
 
 const ProfilePage = () => {
@@ -11,38 +11,49 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
 
   // Password change
-  const [showPwChange, setShowPwChange] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchProfile = async () => {
       try {
         const data = await api.getMe(token);
-        setProfile(data.user);
-      } catch (err) {
-        setProfile({ username: user?.username, role: user?.role, email: "—" });
+        if (isMounted) setProfile(data.user);
+      } catch (_err) {
+        if (isMounted) {
+          setProfile({
+            username: user?.username || "Current User",
+            role: user?.role || "viewer",
+            email: "—",
+            createdAt: null,
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchProfile();
-  }, [token]);
+    return () => { isMounted = false; };
+  }, [token, user?.username, user?.role]);
 
   const handlePasswordChange = async () => {
     setPwError("");
     setPwSuccess(false);
 
     if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirm) {
-      setPwError("All fields are required"); return;
+      setPwError("All fields are required");
+      return;
     }
     if (pwForm.newPassword !== pwForm.confirm) {
-      setPwError("New passwords do not match"); return;
+      setPwError("New passwords do not match");
+      return;
     }
     if (pwForm.newPassword.length < 8) {
-      setPwError("Password must be at least 8 characters"); return;
+      setPwError("Password must be at least 8 characters");
+      return;
     }
 
     setPwLoading(true);
@@ -50,7 +61,7 @@ const ProfilePage = () => {
       await api.changePassword(token, pwForm.currentPassword, pwForm.newPassword);
       setPwSuccess(true);
       setPwForm({ currentPassword: "", newPassword: "", confirm: "" });
-      setTimeout(() => setPwSuccess(false), 3000);
+      setTimeout(() => setPwSuccess(false), 3500);
     } catch (e) {
       setPwError(e.response?.data?.error || "Password change failed");
     } finally {
@@ -61,8 +72,8 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="page">
-        <div className="page__header"><h1 className="page__title">Profile</h1></div>
-        <div className="profile-loading">Loading...</div>
+        <div className="page__header"><h1 className="page__title">User Profile</h1></div>
+        <div className="profile-loading">Loading profile details...</div>
       </div>
     );
   }
@@ -70,13 +81,14 @@ const ProfilePage = () => {
   return (
     <div className="page">
       <div className="page__header">
-        <h1 className="page__title">Profile</h1>
+        <h1 className="page__title">Account & Security</h1>
+        <p className="page__subtitle">Identity attributes and credential management</p>
       </div>
 
       <div className="profile-grid">
         {/* Profile Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="profile-card"
         >
@@ -84,38 +96,46 @@ const ProfilePage = () => {
             {profile?.username?.charAt(0)?.toUpperCase() || "U"}
           </div>
           <h2 className="profile-card__name">{profile?.username}</h2>
-          <span className="profile-card__role-badge">{profile?.role}</span>
+          <span className={`badge badge--role badge--role-${profile?.role?.toLowerCase()}`}>
+            {profile?.role}
+          </span>
 
           <div className="profile-card__details">
             <div className="profile-card__detail">
-              <Mail size={14} />
+              <Mail size={14} className="text-[var(--text-muted)]" />
               <span>{profile?.email || "—"}</span>
             </div>
             <div className="profile-card__detail">
-              <Shield size={14} />
+              <Shield size={14} className="text-[var(--text-muted)]" />
               <span>Role: {profile?.role}</span>
             </div>
             <div className="profile-card__detail">
-              <Calendar size={14} />
-              <span>Joined: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}</span>
+              <UserCheck size={14} className="text-[var(--text-muted)]" />
+              <span>Status: {profile?.status || "Active"}</span>
+            </div>
+            <div className="profile-card__detail">
+              <Calendar size={14} className="text-[var(--text-muted)]" />
+              <span>
+                Joined: {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "Active Member"}
+              </span>
             </div>
           </div>
         </motion.div>
 
         {/* Password Change */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.05 }}
           className="profile-section"
         >
           <h3 className="profile-section__title">
-            <Key size={16} /> Change Password
+            <Key size={16} /> Update Password
           </h3>
 
           {pwSuccess && (
             <div className="alert alert--success">
-              <CheckCircle size={14} /> Password changed successfully!
+              <CheckCircle size={14} /> Password updated successfully
             </div>
           )}
 
@@ -159,7 +179,7 @@ const ProfilePage = () => {
             </div>
 
             <button onClick={handlePasswordChange} disabled={pwLoading} className="btn btn--primary">
-              {pwLoading ? "Changing..." : "Change Password"}
+              {pwLoading ? "Updating…" : "Update Password"}
             </button>
           </div>
         </motion.div>

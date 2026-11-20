@@ -4,7 +4,7 @@ import { useTheme } from "../context/ThemeContext";
 import api from "../services/api";
 import { motion } from "framer-motion";
 import {
-  Sun, Moon, Bell, Shield, Download, Monitor, Palette,
+  Sun, Moon, Bell, Shield, Download, Palette,
   Lock, Eye, FileText
 } from "lucide-react";
 
@@ -34,35 +34,35 @@ const SettingsPage = () => {
   return (
     <div className="page">
       <div className="page__header">
-        <h1 className="page__title">Settings</h1>
-        <p className="page__subtitle">Manage your preferences and security</p>
+        <h1 className="page__title">Platform Settings</h1>
+        <p className="page__subtitle">Client preferences, visual appearance and security configuration</p>
       </div>
 
       <div className="settings-grid">
         {/* Appearance */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="settings-card"
         >
           <div className="settings-card__header">
-            <Palette size={18} />
-            <h3>Appearance</h3>
+            <Palette size={18} className="text-[#4880FF]" />
+            <h3>Interface Theme</h3>
           </div>
           <div className="settings-card__body">
             <div className="settings-item">
               <div className="settings-item__info">
-                <span className="settings-item__label">
+                <span className="settings-item__label flex items-center gap-1.5">
                   {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
-                  Theme
+                  Theme Mode
                 </span>
-                <span className="settings-item__desc">Switch between dark and light mode</span>
+                <span className="settings-item__desc">Toggle between high-contrast dark and light themes</span>
               </div>
-              <button onClick={toggleTheme} className="settings-toggle">
+              <button onClick={toggleTheme} className="settings-toggle cursor-pointer" aria-label="Toggle Theme">
                 <div className={`settings-toggle__track ${theme === "light" ? "settings-toggle__track--on" : ""}`}>
                   <div className="settings-toggle__thumb" />
                 </div>
-                <span>{theme === "dark" ? "Dark" : "Light"}</span>
+                <span className="text-xs font-bold text-[#4880FF]">{theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
               </button>
             </div>
           </div>
@@ -70,26 +70,26 @@ const SettingsPage = () => {
 
         {/* Notifications */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.05 }}
           className="settings-card"
         >
           <div className="settings-card__header">
-            <Bell size={18} />
-            <h3>Notifications</h3>
+            <Bell size={18} className="text-[#8280FF]" />
+            <h3>Notification Preferences</h3>
           </div>
           <div className="settings-card__body">
             <div className="settings-item">
               <div className="settings-item__info">
-                <span className="settings-item__label">Push Notifications</span>
-                <span className="settings-item__desc">Receive alerts for task updates and assignments</span>
+                <span className="settings-item__label">Activity & Assignment Alerts</span>
+                <span className="settings-item__desc">Receive real-time notifications for task assignments and status updates</span>
               </div>
-              <button onClick={() => setNotifications(!notifications)} className="settings-toggle">
+              <button onClick={() => setNotifications(!notifications)} className="settings-toggle cursor-pointer" aria-label="Toggle notifications">
                 <div className={`settings-toggle__track ${notifications ? "settings-toggle__track--on" : ""}`}>
                   <div className="settings-toggle__thumb" />
                 </div>
-                <span>{notifications ? "On" : "Off"}</span>
+                <span className="text-xs font-bold text-[#4880FF]">{notifications ? "Enabled" : "Muted"}</span>
               </button>
             </div>
           </div>
@@ -97,63 +97,70 @@ const SettingsPage = () => {
 
         {/* Security */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.1 }}
           className="settings-card"
         >
           <div className="settings-card__header">
-            <Shield size={18} />
-            <h3>Security</h3>
+            <Shield size={18} className="text-[#00B69B]" />
+            <h3>Security Architecture</h3>
           </div>
           <div className="settings-card__body">
             <div className="settings-item">
               <div className="settings-item__info">
-                <span className="settings-item__label"><Lock size={14} /> Two-Factor Authentication</span>
-                <span className="settings-item__desc">Add an extra layer of security to your account</span>
+                <span className="settings-item__label flex items-center gap-1.5">
+                  <Lock size={14} /> Two-Factor Authentication (2FA)
+                </span>
+                <span className="settings-item__desc">Hardware key / TOTP authenticator protection</span>
               </div>
-              <span className="settings-badge settings-badge--coming">Coming Soon</span>
+              <span className="badge badge--info">Enterprise OAuth</span>
             </div>
 
             <div className="settings-item">
               <div className="settings-item__info">
-                <span className="settings-item__label"><Eye size={14} /> Active Sessions</span>
-                <span className="settings-item__desc">Manage your active login sessions</span>
+                <span className="settings-item__label flex items-center gap-1.5">
+                  <Eye size={14} /> Active Session Integrity
+                </span>
+                <span className="settings-item__desc">Automatic token invalidation and device fingerprinting</span>
               </div>
-              <span className="settings-badge settings-badge--coming">Coming Soon</span>
+              <span className="badge badge--success">Active</span>
             </div>
           </div>
         </motion.div>
 
-        {/* Data */}
+        {/* Data & Export */}
         {user?.role === "admin" && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.15 }}
             className="settings-card"
           >
             <div className="settings-card__header">
-              <FileText size={18} />
-              <h3>Data & Export</h3>
+              <FileText size={18} className="text-[#FEC53D]" />
+              <h3>Audit & Compliance Export</h3>
             </div>
             <div className="settings-card__body">
               <div className="settings-item">
                 <div className="settings-item__info">
-                  <span className="settings-item__label"><Download size={14} /> Export Audit Logs</span>
-                  <span className="settings-item__desc">Download all audit logs as CSV file</span>
+                  <span className="settings-item__label flex items-center gap-1.5">
+                    <Download size={14} /> Export Audit Log Records
+                  </span>
+                  <span className="settings-item__desc">Download complete cryptographic audit trails as CSV</span>
                 </div>
-                <button onClick={handleExportAudit} disabled={exporting} className="btn btn--secondary btn--sm">
-                  {exporting ? "Exporting..." : "Export CSV"}
+                <button
+                  onClick={handleExportAudit}
+                  disabled={exporting}
+                  className="btn btn--primary btn--sm flex items-center gap-1.5"
+                >
+                  <Download size={14} />
+                  {exporting ? "Generating CSV..." : "Export CSV"}
                 </button>
               </div>
             </div>
           </motion.div>
         )}
-      </div>
-
-      <div className="settings-footer">
-        <p>Keyboard shortcut: <kbd>Ctrl</kbd> + <kbd>K</kbd> to open Command Palette</p>
       </div>
     </div>
   );

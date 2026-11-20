@@ -4,18 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SecureVault — Enterprise-grade secure task management portal with JWT authentication, RBAC, OWASP Top 10 compliance, and real-time threat detection." />
-    <meta name="theme-color" content="#0d1117" />
-    <title>SecureVault — Secure Task Portal</title>
+    <meta name="description" content="DashStack — Enterprise-grade secure task management portal and admin dashboard with JWT authentication, RBAC, OWASP Top 10 compliance, and real-time threat detection." />
+    <meta name="theme-color" content="#4880FF" />
+    <title>DashStack — Admin Dashboard & Secure Task Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300..900;1,6..12,300..900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <script>
       // Prevent flash of wrong theme
       (function() {
-        const theme = localStorage.getItem('theme');
+        const theme = localStorage.getItem('app_theme') || localStorage.getItem('theme');
         if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
         }
       })();
     </script>

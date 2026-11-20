@@ -11,6 +11,7 @@ import {
   autoRedactObject,
 } from "../utils/secretScanner";
 import SecretLeakModal from "./SecretLeakModal";
+import { formatTimeAgo } from "../utils/date";
 
 const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) => {
   const { token, user: currentUser } = useAuth();
@@ -30,7 +31,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [secretLeakPending, setSecretLeakPending] = useState(null); // { findings: [...], target: "task" | "comment" }
+  const [secretLeakPending, setSecretLeakPending] = useState(null);
 
   // Real-time secret leaks detection for inline UI
   const titleLeaks = useMemo(() => scanTextForSecrets(form.title, "title"), [form.title]);
@@ -38,12 +39,14 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
   const commentLeaks = useMemo(() => scanTextForSecrets(newComment, "comment"), [newComment]);
 
   useEffect(() => {
-    if (task?._id) {
-      api.getTask(token, task._id).then((data) => {
-        setComments(data.comments || []);
-      }).catch(() => {});
+    if (task?._id && token) {
+      api.getTask(token, task._id)
+        .then((data) => {
+          setComments(data.comments || []);
+        })
+        .catch(() => {});
     }
-  }, [task?._id]);
+  }, [task?._id, token]);
 
   const executeSave = async (sanitizedTitle, sanitizedDesc) => {
     setLoading(true);
@@ -61,8 +64,8 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
 
       await onSave(task?._id, payload, isNew);
       onClose();
-    } catch (e) {
-      setError(e.response?.data?.error || "Save failed");
+    } catch (saveError) {
+      setError(saveError.response?.data?.error || "Save failed");
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
       const data = await api.addComment(token, task._id, sanitizedComment.trim());
       setComments((prev) => [data.comment, ...prev]);
       setNewComment("");
-    } catch (e) {
+    } catch (_err) {
       setError("Failed to add comment");
     }
   };
@@ -141,14 +144,11 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
       }));
       setSecretLeakPending(null);
 
-      // Execute save with safe redacted content
       executeSave(redactedObj.title, redactedObj.description);
     } else if (secretLeakPending.target === "comment") {
       const { redactedText } = redactText(newComment, "comment");
       setNewComment(redactedText);
       setSecretLeakPending(null);
-
-      // Execute comment creation with safe redacted content
       executeAddComment(redactedText);
     }
   };
@@ -167,16 +167,6 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
     }
   };
 
-  const timeAgo = (date) => {
-    const diff = Date.now() - new Date(date).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
-
   return (
     <>
       <AnimatePresence>
@@ -188,18 +178,18 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
           onClick={onClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
             className="task-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(ev) => ev.stopPropagation()}
           >
             {/* Header */}
             <div className="task-modal__header">
               <div className="flex items-center gap-2.5">
                 <h2 className="task-modal__title">{isNew ? "Create Task" : "Edit Task"}</h2>
-                <span className="text-[11px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="badge badge--success">
                   Protected
                 </span>
               </div>
@@ -209,7 +199,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                     <Trash2 size={16} /> Delete
                   </button>
                 )}
-                <button onClick={onClose} className="task-modal__close">
+                <button onClick={onClose} className="task-modal__close" aria-label="Close modal">
                   <X size={18} />
                 </button>
               </div>
@@ -225,7 +215,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                     <label>Title</label>
                     {titleLeaks.length > 0 && (
                       <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
-                        <KeyRound size={11} /> Credential detected in title
+                        <KeyRound size={11} /> Credential detected
                       </span>
                     )}
                   </div>
@@ -254,7 +244,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                   <div className="flex items-center justify-between mb-1">
                     <label>Description</label>
                     {descLeaks.length > 0 && (
-                      <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1 animate-pulse">
+                      <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
                         <ShieldAlert size={12} /> {descLeaks.length} Secret{descLeaks.length > 1 ? "s" : ""} Exposed
                       </span>
                     )}
@@ -262,32 +252,28 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Describe the task (API keys and sensitive tokens are automatically guarded)..."
+                    placeholder="Describe the task (API keys and credentials are automatically guarded)..."
                     className={`form-input form-textarea ${descLeaks.length > 0 ? "border-amber-500/60 focus:border-amber-500" : ""}`}
                     rows={4}
                   />
 
                   {/* Inline Secret Warning & Quick Auto-Redact Pill */}
                   {descLeaks.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-1.5 flex items-center justify-between text-xs bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-amber-300"
-                    >
+                    <div className="mt-1.5 flex items-center justify-between text-xs bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-amber-300">
                       <div className="flex items-center gap-1.5">
                         <ShieldAlert size={14} className="text-amber-400 shrink-0" />
                         <span>
-                          <strong>Smart Leak Scanner:</strong> Found {descLeaks.length} credential{descLeaks.length > 1 ? "s" : ""} ({descLeaks.map((l) => l.type).join(", ")})
+                          <strong>Smart Leak Scanner:</strong> Found {descLeaks.length} credential{descLeaks.length > 1 ? "s" : ""}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleInlineRedactField("description")}
-                        className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/25 hover:bg-amber-500/40 text-amber-100 border border-amber-500/40 rounded font-medium text-[11px] transition-colors cursor-pointer shrink-0"
+                        className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 rounded font-medium text-[11px] transition-colors cursor-pointer shrink-0"
                       >
                         <Sparkles size={11} /> Auto-Redact
                       </button>
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
@@ -341,7 +327,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                     type="text"
                     value={form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="frontend, bug, urgent"
+                    placeholder="frontend, security, urgent"
                     className="form-input"
                   />
                 </div>
@@ -372,7 +358,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                       placeholder="Write a comment..."
                       className={`form-input ${commentLeaks.length > 0 ? "border-amber-500/60" : ""}`}
                     />
-                    <button onClick={handleAddComment} className="btn btn--icon">
+                    <button onClick={handleAddComment} className="btn btn--icon" aria-label="Send comment">
                       <Send size={14} />
                     </button>
                   </div>
@@ -401,7 +387,7 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
                               {c.author?.username?.charAt(0)?.toUpperCase() || "?"}
                             </span>
                             <span className="task-modal__comment-author">{c.author?.username || "Unknown"}</span>
-                            <span className="task-modal__comment-time">{timeAgo(c.createdAt)}</span>
+                            <span className="task-modal__comment-time">{formatTimeAgo(c.createdAt)}</span>
                           </div>
                           <p className="task-modal__comment-text">{c.content}</p>
                         </div>

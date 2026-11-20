@@ -1,22 +1,37 @@
 import { useAuth } from "../context/AuthContext";
+import { Layers, ShieldCheck, LogOut } from "lucide-react";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between bg-gray-900/80 backdrop-blur sticky top-0 z-10">
+    <nav className="h-[70px] border-b border-[var(--border-color)] px-8 flex items-center justify-between bg-[var(--bg-secondary)] sticky top-0 z-30">
       <div className="flex items-center gap-3">
-        <span className="text-xl">🔐</span>
-        <span className="font-bold text-white">SecureVault</span>
-        <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">Protected</span>
+        <div className="w-9 h-9 rounded-xl bg-[#4880FF] text-white flex items-center justify-center shadow-md shadow-[#4880FF]/30">
+          <Layers size={18} />
+        </div>
+        <div className="flex items-center">
+          <span className="font-extrabold text-lg text-[var(--text-primary)]">Dash<span className="text-[#4880FF]">Stack</span></span>
+          <span className="ml-3 text-[11px] font-bold bg-emerald-500/10 text-[#00B69B] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <ShieldCheck size={12} /> Protected
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-400">
-          {user?.username} · <span className="text-emerald-400">{user?.role}</span>
-        </span>
-        <button onClick={logout}
-          className="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-          Sign out
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4880FF] to-[#8280FF] text-white font-bold flex items-center justify-center text-xs">
+            {user?.username?.charAt(0)?.toUpperCase() || "U"}
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold text-[var(--text-primary)]">{user?.username}</span>
+            <span className="text-[10px] font-semibold text-[var(--text-muted)] capitalize">{user?.role}</span>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          className="btn btn--ghost btn--sm text-red-400 hover:text-red-500 hover:bg-red-500/10"
+        >
+          <LogOut size={14} /> Sign out
         </button>
       </div>
     </nav>

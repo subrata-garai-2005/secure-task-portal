@@ -91,8 +91,7 @@ app.use("/notifications", notificationRoutes);
 
 // GET /me — protected
 app.get("/me", authenticate, async (req, res) => {
-  const User = require("./models/User");
-  const user = await User.findById(req.user.id).select("username email role").lean();
+  const user = await User.findById(req.user.id).select("username email role status createdAt").lean();
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ user });
 });

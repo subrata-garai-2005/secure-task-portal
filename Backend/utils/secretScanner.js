@@ -47,7 +47,7 @@ const SECRET_PATTERNS = [
   {
     id: "webhook_url",
     type: "Webhook URL (Slack / Discord)",
-    pattern: /https:\/\/(?:hooks\.slack\.com\/services\/[A-Za-z0-9_\/]+|discord(?:app)?\.com\/api\/webhooks\/[0-9]+\/[A-Za-z0-9_-]+)/gi,
+    pattern: /https:\/\/(?:hooks\.slack\.com\/services\/[A-Za-z0-9_/]+|discord(?:app)?\.com\/api\/webhooks\/[0-9]+\/[A-Za-z0-9_-]+)/gi,
     severity: "high",
   },
   {

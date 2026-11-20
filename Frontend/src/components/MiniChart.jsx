@@ -1,3 +1,20 @@
+function computeDonutSlices(data, total, circumference) {
+  let offset = 0;
+  return data.map((d) => {
+    const pct = d.value / total;
+    const dashLength = pct * circumference;
+    const gap = circumference - dashLength;
+    const currentOffset = offset;
+    offset += pct * circumference;
+    return {
+      ...d,
+      dashLength,
+      gap,
+      currentOffset,
+    };
+  });
+}
+
 const MiniChart = ({ data = [], color = "#10b981", height = 60, type = "bar" }) => {
   if (!data.length) return null;
   const max = Math.max(...data.map((d) => d.value), 1);
@@ -25,34 +42,28 @@ const MiniChart = ({ data = [], color = "#10b981", height = 60, type = "bar" }) 
   // Donut chart
   if (type === "donut") {
     const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
-    let offset = 0;
     const radius = 35;
     const circumference = 2 * Math.PI * radius;
+    const slices = computeDonutSlices(data, total, circumference);
 
     return (
       <div className="mini-chart mini-chart--donut">
         <svg width={height + 20} height={height + 20} viewBox="0 0 100 100">
-          {data.map((d, i) => {
-            const pct = d.value / total;
-            const dashLength = pct * circumference;
-            const gap = circumference - dashLength;
-            const currentOffset = offset;
-            offset += pct * circumference;
-
-            return (
-              <circle
-                key={i}
-                cx="50" cy="50" r={radius}
-                fill="none"
-                stroke={d.color || color}
-                strokeWidth="8"
-                strokeDasharray={`${dashLength} ${gap}`}
-                strokeDashoffset={-currentOffset}
-                strokeLinecap="round"
-                opacity={0.85}
-              />
-            );
-          })}
+          {slices.map((slice, i) => (
+            <circle
+              key={i}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke={slice.color || color}
+              strokeWidth="8"
+              strokeDasharray={`${slice.dashLength} ${slice.gap}`}
+              strokeDashoffset={-slice.currentOffset}
+              strokeLinecap="round"
+              opacity={0.85}
+            />
+          ))}
           <text x="50" y="48" textAnchor="middle" fontSize="14" fontWeight="700" className="mini-chart__donut-text">{total}</text>
           <text x="50" y="60" textAnchor="middle" fontSize="6" className="mini-chart__donut-sub">Total</text>
         </svg>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,7 +35,16 @@ const CommandPalette = ({ onNavigate, onLogout }) => {
     { id: "owasp", label: "Go to OWASP", icon: <Shield size={16} />, group: "Navigation" },
     { id: "profile", label: "Go to Profile", icon: <User size={16} />, group: "Navigation" },
     { id: "settings", label: "Go to Settings", icon: <Settings size={16} />, group: "Navigation" },
-    { id: "logout", label: "Logout", icon: <LogOut size={16} />, group: "Actions", action: () => { onLogout?.(); setOpen(false); } },
+    {
+      id: "logout",
+      label: "Logout",
+      icon: <LogOut size={16} />,
+      group: "Actions",
+      action: () => {
+        onLogout?.();
+        setOpen(false);
+      },
+    },
   ];
 
   return (
@@ -49,17 +58,17 @@ const CommandPalette = ({ onNavigate, onLogout }) => {
           onClick={() => setOpen(false)}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            initial={{ opacity: 0, scale: 0.96, y: -16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            exit={{ opacity: 0, scale: 0.96, y: -16 }}
             transition={{ duration: 0.15 }}
             className="cmd-palette"
             onClick={(e) => e.stopPropagation()}
           >
             <Command>
               <div className="cmd-search">
-                <Search size={16} />
-                <Command.Input placeholder="Type a command or search..." className="cmd-input" />
+                <Search size={16} className="text-zinc-400" />
+                <Command.Input placeholder="Type a command or jump to page..." className="cmd-input" />
                 <kbd className="cmd-kbd">ESC</kbd>
               </div>
               <Command.List className="cmd-list">
@@ -70,7 +79,7 @@ const CommandPalette = ({ onNavigate, onLogout }) => {
                       <Command.Item
                         key={item.id}
                         value={item.label}
-                        onSelect={() => item.action ? item.action() : navigate(item.id)}
+                        onSelect={() => (item.action ? item.action() : navigate(item.id))}
                         className="cmd-item"
                       >
                         {item.icon}

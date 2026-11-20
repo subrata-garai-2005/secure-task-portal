@@ -11,96 +11,86 @@ const SecretLeakModal = ({ findings = [], onAutoRedact, onEditManually }) => {
 
   return (
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ backgroundColor: "rgba(10, 10, 15, 0.85)", backdropFilter: "blur(8px)" }}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
         <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 15 }}
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 15 }}
-          transition={{ type: "spring", stiffness: 350, damping: 28 }}
-          className="bg-[#12121a] border border-amber-500/40 rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative overflow-hidden"
-          style={{ boxShadow: "0 0 40px rgba(245, 158, 11, 0.15)" }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.16 }}
+          className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative"
         >
-          {/* Subtle Ambient Glow */}
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10">
-            {/* Header */}
-            <div className="flex items-start gap-4 mb-5">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
-                <ShieldAlert size={26} />
+          {/* Header */}
+          <div className="flex items-start gap-4 mb-5">
+            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 shrink-0">
+              <ShieldAlert size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Credential Leak Detected</h3>
+                <span className="text-[11px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                  Inspection
+                </span>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-amber-400">Credential Leak Detected</h3>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Smart Guard
+              <p className="text-[var(--text-secondary)] text-sm mt-1">
+                Potential secrets were detected in your input. Submitting plaintext credentials exposes them in persistent logs and database storage.
+              </p>
+            </div>
+          </div>
+
+          {/* Detected Secrets List */}
+          <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto pr-1 mb-5">
+            {findings.map((f, idx) => (
+              <div
+                key={idx}
+                className="bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl p-3 flex flex-col gap-1.5"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-amber-400">
+                    <KeyRound size={13} />
+                    {f.type}
+                  </span>
+                  <span className="text-[var(--text-muted)] font-mono text-[11px] uppercase bg-[var(--bg-elevated)] px-2 py-0.5 rounded">
+                    Field: {f.field}
                   </span>
                 </div>
-                <p className="text-gray-300 text-sm mt-1">
-                  Sensitive API keys or credentials were detected in your input. Submitting this plaintext exposes secrets in logs and databases.
-                </p>
-              </div>
-            </div>
 
-            {/* Detected Secrets List */}
-            <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1 mb-5">
-              {findings.map((f, idx) => (
-                <div
-                  key={idx}
-                  className="bg-[#181824] border border-gray-800 rounded-xl p-3.5 flex flex-col gap-1.5 transition-all hover:border-amber-500/30"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 font-medium text-amber-300">
-                      <KeyRound size={13} className="text-amber-400" />
-                      {f.type}
-                    </span>
-                    <span className="text-gray-400 font-mono text-[11px] uppercase bg-gray-800/80 px-2 py-0.5 rounded">
-                      Field: {f.field}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-[#0e0e15] px-2.5 py-1.5 rounded-lg border border-gray-800/80 text-xs font-mono text-gray-300">
-                    <span className="truncate pr-2">{f.masked}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-red-400 font-sans shrink-0">
-                      <Lock size={11} /> High Risk
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between bg-[var(--bg-primary)] px-2.5 py-1.5 rounded-lg border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)]">
+                  <span className="truncate pr-2">{f.masked}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-red-400 font-sans shrink-0">
+                    <Lock size={11} /> Sensitive
+                  </span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            {/* Info Notice */}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-6 flex items-center gap-2.5 text-xs text-amber-200/90">
-              <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-              <span>
-                <strong>Recommendation:</strong> Use <strong>Auto-Redact</strong> to replace live keys with safe masked placeholders before saving.
-              </span>
-            </div>
+          {/* Info Notice */}
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-6 flex items-center gap-2.5 text-xs text-amber-300">
+            <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+            <span>
+              Use <strong>Auto-Redact</strong> to replace live keys with safe masked identifiers prior to submission.
+            </span>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={onAutoRedact}
-                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-gray-950 font-semibold py-2.5 px-4 rounded-xl shadow-lg shadow-amber-500/20 transition-all text-sm cursor-pointer"
-              >
-                <CheckCircle2 size={16} />
-                Auto-Redact & Proceed
-              </button>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <button
+              type="button"
+              onClick={onAutoRedact}
+              className="flex-1 flex items-center justify-center gap-2 btn btn--primary cursor-pointer text-sm"
+            >
+              <CheckCircle2 size={16} />
+              Auto-Redact & Proceed
+            </button>
 
-              <button
-                type="button"
-                onClick={onEditManually}
-                className="flex items-center justify-center gap-2 bg-gray-800/80 hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-700/80 font-medium py-2.5 px-4 rounded-xl transition-all text-sm cursor-pointer"
-              >
-                <Edit3 size={15} />
-                Edit Manually
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onEditManually}
+              className="btn btn--secondary flex items-center justify-center gap-2 text-sm"
+            >
+              <Edit3 size={15} />
+              Edit Manually
+            </button>
           </div>
         </motion.div>
       </div>

@@ -3,10 +3,13 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { scanInputs } from "../utils/attackDetection";
 import SecurityWarningModal from "../components/SecurityWarningModal";
+import { Layers, ArrowRight, AlertCircle, Shield, Eye, EyeOff } from "lucide-react";
 
 const LoginPage = ({ onSwitch }) => {
   const { login } = useAuth();
   const [form, setForm] = useState({ username: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -15,27 +18,43 @@ const LoginPage = ({ onSwitch }) => {
 
   const handle = async () => {
     if (locked) return;
-    if (!form.username || !form.password) { setError("All fields required"); return; }
+    if (!form.username.trim() || !form.password) {
+      setError("Please enter both username/email and password.");
+      return;
+    }
 
     // ─── PAYLOAD DETECTION ───
-    const threat = scanInputs(form);
-    if (threat) { setWarning(threat); return; }
+    const threat = scanInputs({ username: form.username });
+    if (threat) {
+      setWarning(threat);
+      return;
+    }
 
     setLoading(true);
     setError("");
     try {
-      const { token } = await api.login(form.username, form.password);
+      const { token } = await api.login(form.username.trim(), form.password);
       login(token);
     } catch (e) {
+      console.error("Login failed:", e);
+      const data = e.response?.data;
+      if (e.code === "ERR_NETWORK" || e.message?.includes("Network Error")) {
+        setError("Cannot connect to server. Please verify the backend is running on port 3001.");
+        return;
+      }
+
       const next = attempts + 1;
       setAttempts(next);
       if (next >= 5) {
         setLocked(true);
-        setError("Too many attempts. Account locked for 30 seconds.");
-        setTimeout(() => { setLocked(false); setAttempts(0); }, 30000);
+        setError("Too many failed attempts. Account login locked for 30 seconds.");
+        setTimeout(() => {
+          setLocked(false);
+          setAttempts(0);
+        }, 30000);
       } else {
-        const msg = e.response?.data?.error || "Invalid credentials.";
-        setError(`${msg} ${5 - next} attempt(s) remaining.`);
+        const msg = data?.error || data?.message || "Invalid credentials provided.";
+        setError(`${msg} (${5 - next} attempt${5 - next === 1 ? "" : "s"} remaining)`);
       }
     } finally {
       setLoading(false);
@@ -43,64 +62,119 @@ const LoginPage = ({ onSwitch }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <div className="auth-wrapper">
       {warning && <SecurityWarningModal attackType={warning} onClose={() => setWarning(null)} />}
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
-            <span className="text-3xl">🔐</span>
+
+      <div className="auth-container">
+        {/* Brand Header */}
+        <div className="auth-brand">
+          <div className="auth-brand__icon">
+            <Layers size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">SecureVault</h1>
-          <p className="text-gray-400 text-sm mt-1">Enterprise security dashboard</p>
+          <h1 className="auth-brand__title">
+            Dash<span>Stack</span>
+          </h1>
+          <p className="auth-brand__subtitle">Enterprise Access & Secure Task Management</p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-lg font-semibold text-white mb-6">Sign in</h2>
+        {/* Card */}
+        <div className="auth-card">
+          <div className="auth-card__header">
+            <div>
+              <h2 className="auth-card__title">Login to Account</h2>
+              <p className="text-xs text-[var(--text-muted)] mt-1">Please enter your email and password to continue</p>
+            </div>
+            <span className="badge badge--success">OWASP A07</span>
+          </div>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
-              <span className="mt-0.5">⚠</span> {error}
+            <div className="auth-alert auth-alert--error">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Username</label>
-              <input type="text" autoComplete="username" value={form.username}
+          <div className="auth-form">
+            <div className="auth-field">
+              <label htmlFor="login-username">Username or Email</label>
+              <input
+                id="login-username"
+                type="text"
+                autoComplete="username"
+                value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="Enter username" disabled={locked} />
+                onKeyDown={(e) => e.key === "Enter" && handle()}
+                className="auth-input"
+                placeholder="admin or name@example.com"
+                disabled={locked}
+              />
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Password</label>
-              <input type="password" autoComplete="current-password" value={form.password}
+
+            <div className="auth-field">
+              <div className="flex items-center justify-between">
+                <label htmlFor="login-password">Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-xs text-[#4880FF] hover:underline flex items-center gap-1"
+                >
+                  {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 onKeyDown={(e) => e.key === "Enter" && handle()}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                placeholder="••••••••" disabled={locked} />
+                className="auth-input"
+                placeholder="••••••••"
+                disabled={locked}
+              />
             </div>
-          </div>
 
-          <button onClick={handle} disabled={loading || locked}
-            className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-700 disabled:text-gray-500 text-gray-950 font-semibold py-3 rounded-xl transition-all duration-200 text-sm">
-            {loading ? "Authenticating…" : locked ? "Locked" : "Sign In"}
-          </button>
+            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-[var(--border-color)] text-[#4880FF] focus:ring-[#4880FF]"
+                />
+                Remember Password
+              </label>
+              <span className="text-[#4880FF] cursor-pointer hover:underline">Forgot Password?</span>
+            </div>
 
-          <div className="mt-4 text-center">
-            <button onClick={onSwitch} className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
-              Don't have an account? Register →
+            <button
+              onClick={handle}
+              disabled={loading || locked}
+              className="auth-btn-submit"
+            >
+              {loading ? "Authenticating…" : locked ? "Account Locked" : "Sign In"}
+              {!loading && !locked && <ArrowRight size={15} />}
             </button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-800">
-            <p className="text-xs text-gray-600 text-center">Demo: admin / Admin@123</p>
+          <button onClick={onSwitch} className="auth-switch-link">
+            Don't have an account? <span className="font-bold underline">Create Account</span>
+          </button>
+
+          <div className="auth-footer">
+            <div className="auth-demo-box">
+              Demo Credentials: <strong>admin</strong> / <strong>Admin@123</strong>
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-4">
-          {["JWT Auth", "Rate Limited", "XSS Protected", "Payload Detection"].map((b) => (
-            <span key={b} className="text-xs text-gray-600 flex items-center gap-1">
-              <span className="text-emerald-600">✓</span> {b}
+        {/* Security Trust Badges */}
+        <div className="auth-trust-badges flex items-center justify-center gap-2 flex-wrap">
+          {["JWT Auth", "Rate Limited", "XSS Protected", "Payload Detection"].map((item) => (
+            <span key={item} className="badge badge--info text-[11px]">
+              <Shield size={12} />
+              {item}
             </span>
           ))}
         </div>
