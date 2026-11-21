@@ -217,9 +217,6 @@ const TaskModal = ({ task, onClose, onSave, onDelete, users = [], onWarning }) =
             <div className="task-modal__header">
               <div className="flex items-center gap-2.5">
                 <h2 className="task-modal__title">{isNew ? "Create Task" : "Edit Task"}</h2>
-                <span className="badge badge--success">
-                  Protected
-                </span>
               </div>
               <div className="task-modal__header-actions">
                 {!isNew && currentUser?.role === "admin" && (

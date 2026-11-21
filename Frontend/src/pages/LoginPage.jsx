@@ -84,7 +84,6 @@ const LoginPage = ({ onSwitch }) => {
               <h2 className="auth-card__title">Login to Account</h2>
               <p className="text-xs text-[var(--text-muted)] mt-1">Please enter your email and password to continue</p>
             </div>
-            <span className="badge badge--success">OWASP A07</span>
           </div>
 
           {error && (

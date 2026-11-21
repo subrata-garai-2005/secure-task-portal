@@ -50,13 +50,13 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
       <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
             <UserPlus size={18} className="text-emerald-400" />
             Add New User
           </h3>
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
             aria-label="Close"
           >
             <X size={18} />
@@ -71,7 +71,7 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
 
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Username</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Username</label>
             <input
               type="text"
               value={newUser.username}
@@ -82,7 +82,7 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email Address</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Email Address</label>
             <input
               type="email"
               value={newUser.email}
@@ -93,8 +93,8 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-              Initial Password <span className="text-[var(--text-muted)]">(optional, defaults to User@12345)</span>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+              Initial Password <span className="text-[var(--text-muted)] font-normal">(optional, defaults to User@12345)</span>
             </label>
             <input
               type="password"
@@ -107,7 +107,7 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Role</label>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Role</label>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
@@ -119,7 +119,7 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Status</label>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Status</label>
               <select
                 value={newUser.status}
                 onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
@@ -132,11 +132,11 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
           </div>
         </div>
 
-        <div className="flex gap-2.5 mt-6">
+        <div className="flex items-center gap-3 mt-6 pt-3 border-t border-[var(--border-color)]">
           <button
             type="button"
             onClick={onClose}
-            className="btn btn--secondary flex-1"
+            className="btn btn--secondary flex-1 justify-center py-2.5"
           >
             Cancel
           </button>
@@ -144,7 +144,7 @@ const AddUserModal = ({ onClose, onAdd, onWarning }) => {
             type="button"
             onClick={handleAddUser}
             disabled={submitting}
-            className="btn btn--primary flex-1"
+            className="btn btn--primary flex-1 justify-center py-2.5"
           >
             {submitting ? "Creating…" : "Create User"}
           </button>

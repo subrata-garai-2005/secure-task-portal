@@ -112,7 +112,6 @@ const RegisterPage = ({ onSwitch }) => {
               <h2 className="auth-card__title">Create Account</h2>
               <p className="text-xs text-[var(--text-muted)] mt-1">Sign up for a secure account</p>
             </div>
-            <span className="badge badge--success">OWASP A07</span>
           </div>
 
           {error && (

@@ -13,11 +13,9 @@ import SkeletonLoader from "../components/SkeletonLoader";
 import StatsCard from "../components/StatsCard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Shield, CheckCircle, AlertTriangle, Users, Zap,
-  Database, Lock, KeyRound, Ticket, Gauge, Globe, Hash,
-  ShieldAlert, UserPlus, Edit2, Trash2, Menu, ChevronDown,
+  Search, Users, UserPlus, Edit2, Trash2, Menu, ChevronDown,
   LogOut, Settings as SettingsIcon, User as UserIcon, ArrowRight,
-  UserCheck, Calendar, Flag, CheckCircle2, Clock, Sparkles
+  UserCheck, Calendar, Flag, CheckCircle2, Clock, ListTodo
 } from "lucide-react";
 import { fireConfetti, playSuccessChime } from "../utils/confetti";
 
@@ -27,7 +25,6 @@ import AnalyticsPage from "./AnalyticsPage";
 import ProfilePage from "./ProfilePage";
 import SettingsPage from "./SettingsPage";
 import ActivityPage from "./ActivityPage";
-import SecurityDemoModal from "../components/SecurityDemoModal";
 
 const Dashboard = () => {
   const { token, user, logout } = useAuth();
@@ -41,7 +38,6 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [warning, setWarning] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [showSecurityDemo, setShowSecurityDemo] = useState(false);
   const [threatsBlocked, setThreatsBlocked] = useState(0);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -152,31 +148,6 @@ const Dashboard = () => {
     setThreatsBlocked((p) => p + 1);
   };
 
-  const securityItems = [
-    { label: "SQL Injection Guard", status: "Parameterized queries + ORM protection", icon: Database, ok: true },
-    { label: "XSS Protection", status: "Input sanitization + Content-Security-Policy", icon: Shield, ok: true },
-    { label: "Credential Leak Guard", status: "Auto-redacts API keys, tokens & connection URIs", icon: KeyRound, ok: true },
-    { label: "JWT Authentication", status: "HS256 signed, strict 1h expiry claim", icon: Ticket, ok: true },
-    { label: "Rate Limiter", status: "5 attempts/min on auth, 100/min general", icon: Gauge, ok: true },
-    { label: "CORS Policy", status: "Strict whitelist-only origin inspection", icon: Globe, ok: true },
-    { label: "Transport Security", status: "TLS 1.3 enforced, HSTS preload enabled", icon: Lock, ok: true },
-    { label: "Password Cryptography", status: "bcrypt hashing with cost factor 12", icon: Hash, ok: true },
-    { label: "Payload Interceptor", status: "Real-time client & server signature analysis", icon: ShieldAlert, ok: true },
-  ];
-
-  const owaspItems = [
-    { code: "A01", label: "Broken Access Control", detail: "Strict RBAC middleware and ownership checks on all task mutations" },
-    { code: "A02", label: "Cryptographic Failures", detail: "bcrypt cost 12 password hashing & HS256 signed token verification" },
-    { code: "A03", label: "Injection", detail: "Multi-layered regex payload scanner & parameterized Mongoose queries" },
-    { code: "A04", label: "Insecure Design", detail: "Principle of least privilege, viewer-restricted views, secret redactor" },
-    { code: "A05", label: "Security Misconfiguration", detail: "Helmet security headers, CSP, sanitized error handling without stack leaks" },
-    { code: "A06", label: "Vulnerable Components", detail: "Audited dependencies, zero reported vulnerabilities" },
-    { code: "A07", label: "Identification & Auth Failures", detail: "Rate-limited authentication endpoints and brute-force protection" },
-    { code: "A08", label: "Software & Data Integrity", detail: "Payload guard validation on all incoming request bodies and queries" },
-    { code: "A09", label: "Security Logging & Monitoring", detail: "Immutable MongoDB audit logs capturing all auth, CRUD and blocked attacks" },
-    { code: "A10", label: "Server-Side Request Forgery", detail: "No outbound unvalidated SSRF sinks; whitelist-only redirects" },
-  ];
-
   // ─── Render page content based on activePage ─────────────────────────────
   const renderPage = () => {
     switch (activePage) {
@@ -190,33 +161,6 @@ const Dashboard = () => {
         return <SettingsPage />;
       case "activity":
         return <ActivityPage />;
-      case "demo":
-        return (
-          <div className="page">
-            <div className="page__header">
-              <div>
-                <h1 className="page__title">Cyber Defense &amp; Security Sandbox</h1>
-                <p className="page__subtitle">Interactive live testing environment for In-App WAF and Credential Scanner</p>
-              </div>
-            </div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-8 text-center max-w-xl mx-auto mt-6 shadow-sm flex flex-col items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#4880FF]/15 border border-[#4880FF]/30 text-[#4880FF] flex items-center justify-center">
-                <ShieldAlert size={28} />
-              </div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">Test Real-Time Cyber Interception</h3>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Launch real-world SQL Injection, XSS payloads, or API credential leaks. Watch the portal&apos;s client &amp; server defensive gates neutralize threats with zero latency.
-              </p>
-              <button
-                onClick={() => setShowSecurityDemo(true)}
-                className="btn btn--primary py-2.5 px-6 font-bold text-xs flex items-center gap-2 mt-2 shadow-lg shadow-[#4880FF]/25 cursor-pointer"
-              >
-                <Zap size={14} className="text-amber-300 fill-amber-300" />
-                <span>Launch Interactive Sandbox</span>
-              </button>
-            </div>
-          </div>
-        );
 
       case "users":
         return (
@@ -227,7 +171,6 @@ const Dashboard = () => {
                 <p className="page__subtitle">Role-based access control and identity governance</p>
               </div>
               <div className="page__actions">
-                <span className="badge badge--info">RBAC Enforced</span>
                 {user?.role === "admin" && (
                   <button onClick={() => setShowAddUser(true)} className="btn btn--primary flex items-center gap-1.5">
                     <UserPlus size={15} />
@@ -316,39 +259,6 @@ const Dashboard = () => {
                 </table>
               </div>
             )}
-            <p className="page__note">
-              Role claims are verified with cryptographic signature on every API call. Injections are intercepted at gateway.
-            </p>
-          </div>
-        );
-
-      case "owasp":
-        return (
-          <div className="page">
-            <div className="page__header">
-              <div>
-                <h1 className="page__title">OWASP Top 10 Coverage</h1>
-                <p className="page__subtitle">Architectural verification against the Top 10 web security risks</p>
-              </div>
-            </div>
-            <div className="owasp-list">
-              {owaspItems.map((item, i) => (
-                <motion.div
-                  key={item.code}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="owasp-item"
-                >
-                  <span className="owasp-item__code">{item.code}</span>
-                  <div className="flex-1">
-                    <span className="owasp-item__label block">{item.label}</span>
-                    <span className="text-xs text-[var(--text-muted)] block mt-0.5">{item.detail}</span>
-                  </div>
-                  <span className="owasp-item__badge">Verified</span>
-                </motion.div>
-              ))}
-            </div>
           </div>
         );
 
@@ -358,58 +268,62 @@ const Dashboard = () => {
             <div className="page__header">
               <div>
                 <h1 className="page__title">Dashboard</h1>
-                <p className="page__subtitle">Welcome back, {user?.username}! Real-time task telemetry, security health & workload status</p>
+                <p className="page__subtitle">
+                  Welcome back, {user?.username}! Overview of tasks, team workload, and project progress.
+                </p>
               </div>
               <div className="page__actions">
-                <span className="badge badge--success">
-                  <Shield size={12} /> System Protected
-                </span>
                 <button
                   onClick={() => setActivePage("tasks")}
                   className="btn btn--primary flex items-center gap-1.5"
                 >
+                  <ListTodo size={14} />
                   Go to Tasks
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
 
-            {/* DashStack Signature 4-KPI Grid */}
+            {/* Signature 4-KPI Grid */}
             <div className="stats-grid">
               <StatsCard
-                label="Total Users"
-                value={String(data?.users?.length || 1)}
-                icon={<Users size={24} />}
-                color="#8280FF"
-                trend={8.5}
-                trendText="Up from yesterday"
+                label="Total Tasks"
+                value={String(dashboardTasks.length)}
+                icon={<ListTodo size={24} />}
+                color="#4880FF"
+                trendText="All project tasks"
                 delay={0}
               />
               <StatsCard
-                label="Security Posture"
-                value="99/100"
-                icon={<Shield size={24} />}
-                color="#4880FF"
-                trend={1.8}
-                trendText="Up from yesterday"
+                label="Pending Tasks"
+                value={String(dashboardTasks.filter((t) => t.status !== "done").length)}
+                icon={<Clock size={24} />}
+                color="#FEC53D"
+                trendText="Awaiting completion"
                 delay={0.05}
               />
               <StatsCard
-                label="Attacks Blocked"
-                value={String(threatsBlocked)}
-                icon={<AlertTriangle size={24} />}
-                color="#FEC53D"
-                trend={threatsBlocked > 0 ? 12.5 : 0}
-                trendText="Real-time shield"
+                label="Completed Tasks"
+                value={String(dashboardTasks.filter((t) => t.status === "done").length)}
+                icon={<CheckCircle2 size={24} />}
+                color="#00B69B"
+                trendText={
+                  dashboardTasks.length > 0
+                    ? `${Math.round(
+                        (dashboardTasks.filter((t) => t.status === "done").length /
+                          dashboardTasks.length) *
+                          100
+                      )}% completion rate`
+                    : "No tasks created yet"
+                }
                 delay={0.1}
               />
               <StatsCard
-                label="OWASP Compliance"
-                value="10/10"
-                icon={<CheckCircle size={24} />}
-                color="#00B69B"
-                trend={100}
-                trendText="Fully verified"
+                label="Team Members"
+                value={String(data?.users?.length || 1)}
+                icon={<Users size={24} />}
+                color="#8280FF"
+                trendText="Active accounts"
                 delay={0.15}
               />
             </div>
@@ -608,67 +522,76 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Right Column: Security Telemetry Summary */}
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-[var(--text-primary)]">Security Telemetry</h3>
-                    <p className="text-xs text-[var(--text-muted)] mt-0.5">Real-time gatekeeper status</p>
+              {/* Right Column: Task Status Breakdown */}
+              <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-[var(--text-primary)]">Task Progress</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Status breakdown across active tasks</p>
+                    </div>
+                    <span className="text-xs font-bold text-[#4880FF] bg-[#4880FF]/10 px-2.5 py-1 rounded-full border border-[#4880FF]/20">
+                      {dashboardTasks.length > 0
+                        ? `${Math.round(
+                            (dashboardTasks.filter((t) => t.status === "done").length /
+                              dashboardTasks.length) *
+                              100
+                          )}% Done`
+                        : "0% Done"}
+                    </span>
                   </div>
-                  <span className="badge badge--success">100% Active</span>
-                </div>
 
-                <div className="flex flex-col gap-3">
-                  {securityItems.slice(0, 5).map((item) => {
-                    const SecIcon = item.icon;
+                  {(() => {
+                    const total = dashboardTasks.length || 1;
+                    const counts = {
+                      todo: dashboardTasks.filter((t) => t.status === "todo").length,
+                      in_progress: dashboardTasks.filter((t) => t.status === "in_progress").length,
+                      review: dashboardTasks.filter((t) => t.status === "review").length,
+                      done: dashboardTasks.filter((t) => t.status === "done").length,
+                    };
+                    const items = [
+                      { label: "To Do", count: counts.todo, bg: "bg-gray-400" },
+                      { label: "In Progress", count: counts.in_progress, bg: "bg-[#4880FF]" },
+                      { label: "In Review", count: counts.review, bg: "bg-[#FEC53D]" },
+                      { label: "Completed", count: counts.done, bg: "bg-[#00B69B]" },
+                    ];
+
                     return (
-                      <div
-                        key={item.label}
-                        className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)]"
-                      >
-                        <div className="flex items-center gap-3 min-width-0">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-[#00B69B] flex items-center justify-center shrink-0">
-                            <SecIcon size={16} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-bold text-[var(--text-primary)] block">
-                              {item.label}
-                            </span>
-                            <span className="text-[11px] text-[var(--text-muted)] block truncate max-w-[170px]">
-                              {item.status}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="badge badge--success text-[10px] py-0.5 px-2">Active</span>
+                      <div className="flex flex-col gap-3 mt-2">
+                        {items.map((it) => {
+                          const pct = dashboardTasks.length > 0 ? Math.round((it.count / total) * 100) : 0;
+                          return (
+                            <div key={it.label} className="p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)]">
+                              <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
+                                <span className="text-[var(--text-primary)] flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full ${it.bg}`} />
+                                  {it.label}
+                                </span>
+                                <span className="text-[var(--text-muted)]">
+                                  {it.count} task{it.count !== 1 ? "s" : ""} ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-[var(--bg-secondary)] h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${it.bg} transition-all duration-500`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
-                  })}
+                  })()}
                 </div>
-              </div>
-            </div>
 
-            {/* Full Security Controls Section */}
-            <h3 className="section-title">Complete Security Architecture</h3>
-            <div className="security-grid">
-              {securityItems.map((item) => {
-                const SecIcon = item.icon;
-                return (
-                  <div key={item.label} className="security-card">
-                    <span className="security-card__icon">
-                      <SecIcon size={18} className="text-[#4880FF]" />
-                    </span>
-                    <div className="security-card__content">
-                      <div className="security-card__header">
-                        <span className="security-card__label">{item.label}</span>
-                        <span className={`badge ${item.ok ? "badge--success" : "badge--error"}`}>
-                          {item.ok ? "Active" : "Disabled"}
-                        </span>
-                      </div>
-                      <p className="security-card__status">{item.status}</p>
-                    </div>
-                  </div>
-                );
-              })}
+                <button
+                  onClick={() => setActivePage("tasks")}
+                  className="mt-4 w-full py-2.5 px-4 rounded-xl text-xs font-bold text-[#4880FF] bg-[#4880FF]/10 hover:bg-[#4880FF]/20 border border-[#4880FF]/25 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  View All Tasks in Board <ArrowRight size={13} />
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -755,20 +678,6 @@ const Dashboard = () => {
           </div>
 
           <div className="topbar__right">
-            <button
-              onClick={() => setShowSecurityDemo(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-[#4880FF] text-xs font-bold transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
-              title="Interactive Cyber Threat Sandbox & Payload Simulator"
-            >
-              <Zap size={13} className="text-amber-400 fill-amber-400" />
-              <span className="hidden sm:inline">Security Demo</span>
-            </button>
-
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Shield Active</span>
-            </div>
-
             <NotificationBell />
             <ThemeToggle />
 
@@ -856,15 +765,6 @@ const Dashboard = () => {
         >
           {renderPage()}
         </motion.div>
-
-        {/* Security Sandbox Demo Modal */}
-        <SecurityDemoModal
-          isOpen={showSecurityDemo}
-          onClose={() => setShowSecurityDemo(false)}
-          onTriggerAlert={(threat) => {
-            handleWarning(threat);
-          }}
-        />
       </main>
     </div>
   );

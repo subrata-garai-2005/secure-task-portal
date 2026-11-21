@@ -3,7 +3,7 @@ import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ListTodo, BarChart3, User, Settings, Activity,
-  Shield, Search, LogOut
+  Search, LogOut
 } from "lucide-react";
 
 const CommandPalette = ({ onNavigate, onLogout }) => {
@@ -32,7 +32,6 @@ const CommandPalette = ({ onNavigate, onLogout }) => {
     { id: "analytics", label: "Go to Analytics", icon: <BarChart3 size={16} />, group: "Navigation" },
     { id: "users", label: "Go to Users", icon: <User size={16} />, group: "Navigation" },
     { id: "activity", label: "Go to Activity", icon: <Activity size={16} />, group: "Navigation" },
-    { id: "owasp", label: "Go to OWASP", icon: <Shield size={16} />, group: "Navigation" },
     { id: "profile", label: "Go to Profile", icon: <User size={16} />, group: "Navigation" },
     { id: "settings", label: "Go to Settings", icon: <Settings size={16} />, group: "Navigation" },
     {

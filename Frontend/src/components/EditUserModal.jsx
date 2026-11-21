@@ -40,13 +40,13 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
       <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
             <UserCheck size={18} className="text-blue-400" />
             Edit User #{displayId}
           </h3>
           <button
             onClick={onClose}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
             aria-label="Close"
           >
             <X size={18} />
@@ -61,7 +61,7 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
 
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Username</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Username</label>
             <input
               type="text"
               value={editForm.username}
@@ -72,7 +72,7 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email Address</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Email Address</label>
             <input
               type="email"
               value={editForm.email}
@@ -84,7 +84,7 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Role</label>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Role</label>
               <select
                 value={editForm.role}
                 onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
@@ -97,7 +97,7 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Status</label>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Status</label>
               <select
                 value={editForm.status}
                 onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -110,11 +110,11 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
           </div>
         </div>
 
-        <div className="flex gap-2.5 mt-6">
+        <div className="flex items-center gap-3 mt-6 pt-3 border-t border-[var(--border-color)]">
           <button
             type="button"
             onClick={onClose}
-            className="btn btn--secondary flex-1"
+            className="btn btn--secondary flex-1 justify-center py-2.5"
           >
             Cancel
           </button>
@@ -122,7 +122,7 @@ const EditUserModal = ({ user, onClose, onSave, onWarning }) => {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="btn btn--primary flex-1"
+            className="btn btn--primary flex-1 justify-center py-2.5"
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>
