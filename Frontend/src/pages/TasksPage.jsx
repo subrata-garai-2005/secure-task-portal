@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { fireConfetti, playSuccessChime } from "../utils/confetti";
 import {
   LayoutGrid, List, Plus, Search, Flag, ClipboardList,
-  Calendar, User as UserIcon
+  Calendar, User as UserIcon, CheckCircle2, UserCheck
 } from "lucide-react";
 
 const TasksPage = () => {
@@ -130,7 +130,11 @@ const TasksPage = () => {
       <div className="page__header">
         <div>
           <h1 className="page__title">Task Workload</h1>
-          <p className="page__subtitle">{tasks.length} total active tasks</p>
+          <p className="page__subtitle">
+            {user?.role === "viewer"
+              ? `${tasks.length} task(s) assigned to you — Complete and mark tasks as done`
+              : `${tasks.length} total active tasks across organization`}
+          </p>
         </div>
         <div className="page__actions">
           {/* View Toggle */}
@@ -210,6 +214,7 @@ const TasksPage = () => {
             <span>Status</span>
             <span>Assignee</span>
             <span>Due Date</span>
+            <span>Action</span>
           </div>
           <AnimatePresence>
             {sortedTasks.map((task) => (
@@ -221,7 +226,14 @@ const TasksPage = () => {
                 className="task-list__row"
                 onClick={() => openEditTask(task)}
               >
-                <span className="task-list__title">{task.title}</span>
+                <span className="task-list__title flex items-center gap-2">
+                  {(task.assignee?._id || task.assignee) === user?.id && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-[#4880FF] border border-blue-500/30 shrink-0">
+                      You
+                    </span>
+                  )}
+                  {task.title}
+                </span>
                 <span className={`task-list__priority task-list__priority--${task.priority}`}>
                   <Flag size={12} /> {task.priority}
                 </span>
@@ -243,6 +255,24 @@ const TasksPage = () => {
                   {task.dueDate
                     ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                     : "No date"}
+                </span>
+                <span className="task-list__action flex items-center" onClick={(e) => e.stopPropagation()}>
+                  {task.status === "done" ? (
+                    <span className="text-[11px] font-bold text-[#00B69B] flex items-center gap-1 bg-[#00B69B]/10 border border-[#00B69B]/25 px-2 py-0.5 rounded-md">
+                      <CheckCircle2 size={12} className="fill-[#00B69B]/20" /> Done
+                    </span>
+                  ) : (canEdit || (task.assignee?._id || task.assignee) === user?.id) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(task._id || task.id, "done")}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#00B69B]/15 hover:bg-[#00B69B]/25 text-[#00B69B] border border-[#00B69B]/30 flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
+                      title="Complete this task"
+                    >
+                      <CheckCircle2 size={12} /> Complete
+                    </button>
+                  ) : (
+                    <span className="text-xs text-[var(--text-muted)]">—</span>
+                  )}
                 </span>
               </motion.div>
             ))}

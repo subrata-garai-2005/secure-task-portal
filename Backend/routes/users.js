@@ -11,8 +11,8 @@ const router = express.Router();
 
 const BCRYPT_ROUNDS = 12;
 
-// GET /users — protected, admin only
-router.get("/", authenticate, requireRole("admin"), async (req, res) => {
+// GET /users — protected, admin and editor
+router.get("/", authenticate, requireRole("admin", "editor"), async (req, res) => {
   try {
     // Never return passwords — select specific fields only
     const users = await User.find()

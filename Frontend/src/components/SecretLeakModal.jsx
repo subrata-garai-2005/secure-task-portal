@@ -1,62 +1,78 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldAlert, KeyRound, CheckCircle2, Edit3, Lock, AlertTriangle } from "lucide-react";
+import { ShieldAlert, KeyRound, CheckCircle2, Edit3, Lock, AlertTriangle, ShieldX, X, Sparkles } from "lucide-react";
 
 /**
- * SecretLeakModal
- * Displays when a user attempts to submit a task or comment with sensitive secrets (API keys, DB credentials, etc.)
- * Provides 1-click Auto-Redaction.
+ * SecretLeakModal (Security Alert Popup)
+ * Triggered whenever a user attempts to submit a task or comment containing API keys,
+ * JWT tokens, passwords, or secret credentials.
  */
 const SecretLeakModal = ({ findings = [], onAutoRedact, onEditManually }) => {
   if (!findings || findings.length === 0) return null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div className="sec-modal-overlay" style={{ zIndex: 9999 }}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 12 }}
-          transition={{ duration: 0.16 }}
-          className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl relative"
+          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="sec-modal-card max-w-lg"
         >
+          {/* Top Close Button */}
+          <button
+            onClick={onEditManually}
+            className="sec-modal-close"
+            aria-label="Close Alert"
+          >
+            <X size={16} />
+          </button>
+
           {/* Header */}
-          <div className="flex items-start gap-4 mb-5">
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 shrink-0">
-              <ShieldAlert size={22} />
+          <div className="sec-modal-header">
+            <div className="sec-modal-icon-wrap" style={{ background: "rgba(245, 158, 11, 0.15)", borderColor: "rgba(245, 158, 11, 0.4)", color: "#fbbf24" }}>
+              <ShieldAlert size={30} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-[var(--text-primary)]">Credential Leak Detected</h3>
-                <span className="text-[11px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
-                  Inspection
-                </span>
-              </div>
-              <p className="text-[var(--text-secondary)] text-sm mt-1">
-                Potential secrets were detected in your input. Submitting plaintext credentials exposes them in persistent logs and database storage.
-              </p>
+            <h2 className="sec-modal-title" style={{ color: "#fef08a" }}>Security Alert Triggered</h2>
+            <p className="sec-modal-subtitle">
+              Plaintext credential exposure was intercepted by the In-App Security Guard (OWASP A02).
+            </p>
+          </div>
+
+          {/* Threat Box */}
+          <div className="sec-modal-threat-box" style={{ background: "rgba(245, 158, 11, 0.08)", borderColor: "rgba(245, 158, 11, 0.3)" }}>
+            <div className="sec-modal-threat-header">
+              <span className="sec-modal-threat-label" style={{ color: "#fbbf24" }}>Identified Threat Signature</span>
+              <span className="sec-modal-threat-tag" style={{ background: "rgba(245, 158, 11, 0.25)", color: "#fef08a", borderColor: "rgba(245, 158, 11, 0.4)" }}>
+                BLOCKED
+              </span>
+            </div>
+            <div className="sec-modal-threat-val">
+              <ShieldX size={18} className="text-amber-400 shrink-0" />
+              <span>Credential Exposure: {[...new Set(findings.map((f) => f.type))].join(", ")}</span>
             </div>
           </div>
 
-          {/* Detected Secrets List */}
-          <div className="flex flex-col gap-2.5 max-h-56 overflow-y-auto pr-1 mb-5">
+          {/* Detected Secrets Cards */}
+          <div className="flex flex-col gap-2 max-h-44 overflow-y-auto pr-1">
             {findings.map((f, idx) => (
               <div
                 key={idx}
-                className="bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl p-3 flex flex-col gap-1.5"
+                className="bg-[#141926] border border-amber-500/25 rounded-xl p-3 flex flex-col gap-1.5"
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-medium text-amber-400">
+                  <span className="flex items-center gap-1.5 font-bold text-amber-300">
                     <KeyRound size={13} />
                     {f.type}
                   </span>
-                  <span className="text-[var(--text-muted)] font-mono text-[11px] uppercase bg-[var(--bg-elevated)] px-2 py-0.5 rounded">
+                  <span className="text-amber-400 font-mono text-[10px] uppercase bg-amber-500/15 border border-amber-500/25 px-2 py-0.5 rounded font-bold">
                     Field: {f.field}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between bg-[var(--bg-primary)] px-2.5 py-1.5 rounded-lg border border-[var(--border-color)] text-xs font-mono text-[var(--text-secondary)]">
-                  <span className="truncate pr-2">{f.masked}</span>
-                  <span className="flex items-center gap-1 text-[11px] text-red-400 font-sans shrink-0">
+                <div className="flex items-center justify-between bg-black/50 px-2.5 py-1.5 rounded-lg border border-white/5 text-xs font-mono text-gray-300">
+                  <span className="truncate pr-2 font-semibold">{f.masked}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-red-400 font-sans font-bold shrink-0">
                     <Lock size={11} /> Sensitive
                   </span>
                 </div>
@@ -64,32 +80,40 @@ const SecretLeakModal = ({ findings = [], onAutoRedact, onEditManually }) => {
             ))}
           </div>
 
-          {/* Info Notice */}
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-6 flex items-center gap-2.5 text-xs text-amber-300">
-            <AlertTriangle size={15} className="text-amber-400 shrink-0" />
-            <span>
-              Use <strong>Auto-Redact</strong> to replace live keys with safe masked identifiers prior to submission.
-            </span>
+          {/* Incident Audit Details */}
+          <div className="sec-modal-list">
+            <div className="sec-modal-item">
+              <AlertTriangle size={15} className="sec-modal-item-icon text-amber-400" />
+              <span>Input contained live JWT tokens, API keys, or confidential credentials.</span>
+            </div>
+            <div className="sec-modal-item">
+              <AlertTriangle size={15} className="sec-modal-item-icon text-amber-400" />
+              <span>Plaintext submission was blocked to prevent persistent storage &amp; leakage.</span>
+            </div>
+            <div className="sec-modal-item">
+              <AlertTriangle size={15} className="sec-modal-item-icon text-amber-400" />
+              <span>Click Auto-Redact to sanitize the secret into a safe masked token identifier.</span>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
             <button
               type="button"
               onClick={onAutoRedact}
-              className="flex-1 flex items-center justify-center gap-2 btn btn--primary cursor-pointer text-sm"
+              className="flex-1 flex items-center justify-center gap-2 btn btn--primary bg-amber-600 hover:bg-amber-500 border-amber-600 text-white font-bold py-2.5 text-xs shadow-lg shadow-amber-500/20 cursor-pointer"
             >
-              <CheckCircle2 size={16} />
-              Auto-Redact & Proceed
+              <Sparkles size={14} />
+              Auto-Redact &amp; Save Safely
             </button>
 
             <button
               type="button"
               onClick={onEditManually}
-              className="btn btn--secondary flex items-center justify-center gap-2 text-sm"
+              className="btn btn--secondary flex items-center justify-center gap-2 py-2.5 text-xs font-bold"
             >
-              <Edit3 size={15} />
-              Edit Manually
+              <Edit3 size={14} />
+              Cancel &amp; Edit Manually
             </button>
           </div>
         </motion.div>

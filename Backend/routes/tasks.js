@@ -219,7 +219,7 @@ router.post("/", authenticate, requireRole("admin", "editor"), payloadGuard, [
 });
 
 // ─── PUT /tasks/:id — update task ───────────────────────────────────────────
-router.put("/:id", authenticate, requireRole("admin", "editor"), payloadGuard, [
+router.put("/:id", authenticate, payloadGuard, [
   body("title").optional().trim().isLength({ min: 1, max: 200 }),
   body("priority").optional().isIn(["low", "medium", "high", "critical"]),
   body("status").optional().isIn(["todo", "in_progress", "review", "done"]),
@@ -231,38 +231,55 @@ router.put("/:id", authenticate, requireRole("admin", "editor"), payloadGuard, [
     const existing = await Task.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: "Task not found" });
 
+    const isAdminOrEditor = req.user.role === "admin" || req.user.role === "editor";
+    const isAssignee = existing.assignee && String(existing.assignee) === String(req.user.id);
+
+    // Only Admin, Editor, or the assigned user can update the task
+    if (!isAdminOrEditor && !isAssignee) {
+      return res.status(403).json({ error: "Only the assigned user or an administrator can update this task" });
+    }
+
     const { title, description, priority, status, assignee, dueDate, tags, links, order } = req.body;
     const updates = {};
 
-    if (title !== undefined) updates.title = title;
-    if (description !== undefined) updates.description = description;
-
-    // Smart Secret & Credential Leak Scanner (Auto-Redaction on update)
-    if (updates.title || updates.description) {
-      const { redactedObj, totalRedacted, allFindings } = autoRedactObject({
-        title: updates.title || "",
-        description: updates.description || "",
-      });
-      if (totalRedacted > 0) {
-        if (updates.title) updates.title = redactedObj.title;
-        if (updates.description) updates.description = redactedObj.description;
-        const types = [...new Set(allFindings.map((f) => f.type))].join(", ");
-        auditLog(
-          req.user.id,
-          `SECRET_LEAK_PREVENTED:${types}`,
-          req.ip,
-          `Auto-redacted ${totalRedacted} credential(s) in task update`
-        );
+    // Non-admin assignees can only update status and order (cannot reassign or alter task specs)
+    if (!isAdminOrEditor && isAssignee) {
+      if (status !== undefined) updates.status = status;
+      if (order !== undefined) updates.order = order;
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: "Assignees can only update task status" });
       }
-    }
+    } else {
+      if (title !== undefined) updates.title = title;
+      if (description !== undefined) updates.description = description;
 
-    if (priority !== undefined) updates.priority = priority;
-    if (status !== undefined) updates.status = status;
-    if (assignee !== undefined) updates.assignee = assignee || null;
-    if (dueDate !== undefined) updates.dueDate = dueDate || null;
-    if (tags !== undefined) updates.tags = tags;
-    if (links !== undefined) updates.links = links;
-    if (order !== undefined) updates.order = order;
+      // Smart Secret & Credential Leak Scanner (Auto-Redaction on update)
+      if (updates.title || updates.description) {
+        const { redactedObj, totalRedacted, allFindings } = autoRedactObject({
+          title: updates.title || "",
+          description: updates.description || "",
+        });
+        if (totalRedacted > 0) {
+          if (updates.title) updates.title = redactedObj.title;
+          if (updates.description) updates.description = redactedObj.description;
+          const types = [...new Set(allFindings.map((f) => f.type))].join(", ");
+          auditLog(
+            req.user.id,
+            `SECRET_LEAK_PREVENTED:${types}`,
+            req.ip,
+            `Auto-redacted ${totalRedacted} credential(s) in task update`
+          );
+        }
+      }
+
+      if (priority !== undefined) updates.priority = priority;
+      if (status !== undefined) updates.status = status;
+      if (assignee !== undefined) updates.assignee = assignee || null;
+      if (dueDate !== undefined) updates.dueDate = dueDate || null;
+      if (tags !== undefined) updates.tags = tags;
+      if (links !== undefined) updates.links = links;
+      if (order !== undefined) updates.order = order;
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No fields to update" });
@@ -284,7 +301,14 @@ router.put("/:id", authenticate, requireRole("admin", "editor"), payloadGuard, [
 
     // Notify on status change to done
     if (status === "done" && existing.status !== "done" && existing.creator && String(existing.creator) !== req.user.id) {
-      notify(existing.creator, "task_completed", "Task Completed", `"${updated.title}" has been marked as done`, updated._id, "task");
+      notify(
+        existing.creator,
+        "task_completed",
+        "Task Completed",
+        `"${updated.title}" has been completed by ${req.user.username || "assignee"}`,
+        updated._id,
+        "task"
+      );
     }
 
     res.json({ message: "Task updated", task: updated });
@@ -294,12 +318,23 @@ router.put("/:id", authenticate, requireRole("admin", "editor"), payloadGuard, [
   }
 });
 
-// ─── PUT /tasks/:id/status — quick status update (for kanban drag) ──────────
-router.put("/:id/status", authenticate, requireRole("admin", "editor"), async (req, res) => {
+// ─── PUT /tasks/:id/status — quick status update (for kanban drag or quick complete) ──────────
+router.put("/:id/status", authenticate, async (req, res) => {
   try {
     const { status, order } = req.body;
     if (!["todo", "in_progress", "review", "done"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const existing = await Task.findById(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Task not found" });
+
+    const isAdminOrEditor = req.user.role === "admin" || req.user.role === "editor";
+    const isAssignee = existing.assignee && String(existing.assignee) === String(req.user.id);
+
+    // Only Admin, Editor, or the assigned user can update status
+    if (!isAdminOrEditor && !isAssignee) {
+      return res.status(403).json({ error: "Only the assigned user or an administrator can update this task" });
     }
 
     const updates = { status };
@@ -310,7 +345,24 @@ router.put("/:id/status", authenticate, requireRole("admin", "editor"), async (r
       .populate("creator", "username")
       .lean();
 
-    if (!updated) return res.status(404).json({ error: "Task not found" });
+    auditLog(
+      req.user.id,
+      `TASK_STATUS_${status.toUpperCase()}:${updated._id}`,
+      req.ip,
+      `Status changed to "${status}" by ${req.user.username || "user"}`
+    );
+
+    // Notify creator when task is marked as done
+    if (status === "done" && existing.status !== "done" && existing.creator && String(existing.creator) !== req.user.id) {
+      notify(
+        existing.creator,
+        "task_completed",
+        "Task Completed",
+        `"${updated.title}" has been completed by ${req.user.username || "assignee"}`,
+        updated._id,
+        "task"
+      );
+    }
 
     res.json({ task: updated });
   } catch (err) {

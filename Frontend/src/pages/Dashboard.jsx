@@ -16,8 +16,10 @@ import {
   Search, Shield, CheckCircle, AlertTriangle, Users, Zap,
   Database, Lock, KeyRound, Ticket, Gauge, Globe, Hash,
   ShieldAlert, UserPlus, Edit2, Trash2, Menu, ChevronDown,
-  LogOut, Settings as SettingsIcon, User as UserIcon, ArrowRight
+  LogOut, Settings as SettingsIcon, User as UserIcon, ArrowRight,
+  UserCheck, Calendar, Flag, CheckCircle2, Clock, Sparkles
 } from "lucide-react";
+import { fireConfetti, playSuccessChime } from "../utils/confetti";
 
 // Page imports
 import TasksPage from "./TasksPage";
@@ -43,21 +45,34 @@ const Dashboard = () => {
   const [threatsBlocked, setThreatsBlocked] = useState(0);
   const [editUser, setEditUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [dashboardTasks, setDashboardTasks] = useState([]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchOverviewData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await api.getUsers(token);
-      const users = (res.users || []).map((u) => ({
-        id: u._id || u.id,
-        name: u.username,
-        username: u.username,
-        email: u.email,
-        role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : "Viewer",
-        status: u.status || "Active",
-      }));
-      setData({ users });
+      const [usersRes, tasksRes] = await Promise.allSettled([
+        api.getUsers(token),
+        api.getTasks(token),
+      ]);
+
+      if (usersRes.status === "fulfilled") {
+        const users = (usersRes.value.users || []).map((u) => ({
+          id: u._id || u.id,
+          name: u.username,
+          username: u.username,
+          email: u.email,
+          role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : "Viewer",
+          status: u.status || "Active",
+        }));
+        setData({ users });
+      } else {
+        setData({ users: [] });
+      }
+
+      if (tasksRes.status === "fulfilled") {
+        setDashboardTasks(tasksRes.value.tasks || []);
+      }
     } catch (_err) {
       setData({ users: [] });
     } finally {
@@ -67,9 +82,22 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (activePage === "users" || activePage === "overview") {
-      fetchUsers();
+      fetchOverviewData();
     }
-  }, [activePage, fetchUsers]);
+  }, [activePage, fetchOverviewData]);
+
+  const handleDashboardCompleteTask = async (taskId) => {
+    try {
+      await api.updateTaskStatus(token, taskId, "done");
+      fireConfetti();
+      playSuccessChime();
+      setDashboardTasks((prev) =>
+        prev.map((t) => ((t._id || t.id) === taskId ? { ...t, status: "done" } : t))
+      );
+    } catch (err) {
+      console.error("Failed to complete task:", err);
+    }
+  };
 
   const filteredUsers = (data?.users || []).filter((u) => {
     if (!searchQuery) return true;
@@ -95,7 +123,7 @@ const Dashboard = () => {
 
   const handleAddUser = async (newUser) => {
     await api.createUser(token, newUser);
-    fetchUsers();
+    fetchOverviewData();
     setShowAddUser(false);
   };
 
@@ -106,14 +134,14 @@ const Dashboard = () => {
       role: editForm.role,
       status: editForm.status,
     });
-    fetchUsers();
+    fetchOverviewData();
   };
 
   const handleDeleteUser = async (userId) => {
     try {
       await api.deleteUser(token, userId);
       setDeleteConfirm(null);
-      fetchUsers();
+      fetchOverviewData();
     } catch (err) {
       alert(err.response?.data?.error || "Failed to delete user.");
     }
@@ -385,6 +413,137 @@ const Dashboard = () => {
                 delay={0.15}
               />
             </div>
+
+            {/* Assigned Tasks Section (What the user has to complete) */}
+            {(() => {
+              const myTasks = dashboardTasks.filter((t) => {
+                if (user?.role === "viewer") return true;
+                return (t.assignee?._id || t.assignee) === user?.id;
+              });
+              const pending = myTasks.filter((t) => t.status !== "done");
+              const completed = myTasks.filter((t) => t.status === "done");
+
+              return (
+                <div className="mt-6 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <UserCheck size={18} className="text-[#4880FF]" />
+                        <h3 className="text-base font-bold text-[var(--text-primary)]">
+                          {user?.role === "viewer" ? "Tasks Assigned to You" : "Your Assigned Workload"}
+                        </h3>
+                        <span className="badge badge--info text-[11px] font-bold">
+                          {pending.length} Pending
+                        </span>
+                        {completed.length > 0 && (
+                          <span className="badge badge--success text-[11px] font-bold">
+                            {completed.length} Completed
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        {user?.role === "viewer"
+                          ? "Tasks assigned by administrators that require your completion"
+                          : "Tasks assigned to your user account across current sprints"}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setActivePage("tasks")}
+                      className="btn btn--secondary btn--sm flex items-center gap-1.5 text-xs font-bold"
+                    >
+                      Open Tasks Board <ArrowRight size={13} />
+                    </button>
+                  </div>
+
+                  {pending.length > 0 && (
+                    <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs text-amber-300">
+                      <div className="flex items-center gap-2">
+                        <Clock size={15} className="text-amber-400 shrink-0" />
+                        <span>
+                          <strong>Action Required:</strong> You have {pending.length} task{pending.length > 1 ? "s" : ""} pending completion.
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-amber-200">
+                        Mark as complete when finished
+                      </span>
+                    </div>
+                  )}
+
+                  {myTasks.length === 0 ? (
+                    <div className="text-center py-8 text-[var(--text-muted)] border border-dashed border-[var(--border-color)] rounded-xl">
+                      <UserCheck size={28} className="mx-auto mb-2 opacity-40 text-[#4880FF]" />
+                      <p className="text-xs font-semibold">No assigned tasks found.</p>
+                      <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                        {user?.role === "admin"
+                          ? "You can create and assign tasks to users on the Tasks page."
+                          : "When an administrator assigns a task to you, it will appear here."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myTasks.slice(0, 6).map((task) => {
+                        const isDone = task.status === "done";
+                        return (
+                          <div
+                            key={task._id || task.id}
+                            className={`p-4 rounded-xl bg-[var(--bg-primary)] border transition-all flex flex-col justify-between gap-3 ${
+                              isDone
+                                ? "border-emerald-500/30 opacity-90"
+                                : "border-[var(--border-color)] hover:border-[#4880FF]/50 shadow-sm"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <span className={`badge badge--priority badge--priority-${task.priority} text-[10px]`}>
+                                  <Flag size={9} /> {task.priority}
+                                </span>
+                                <span className={`badge badge--status badge--status-${task.status} text-[10px]`}>
+                                  {task.status?.replace("_", " ")}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-bold text-[var(--text-primary)] line-clamp-1">
+                                {task.title}
+                              </h4>
+                              {task.description && (
+                                <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 mt-1 leading-relaxed">
+                                  {task.description}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
+                              <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+                                <Calendar size={11} />
+                                {task.dueDate
+                                  ? new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                                  : "No due date"}
+                              </span>
+
+                              {isDone ? (
+                                <span className="text-[11px] font-bold text-[#00B69B] flex items-center gap-1 bg-[#00B69B]/10 border border-[#00B69B]/20 px-2 py-0.5 rounded-md">
+                                  <CheckCircle2 size={12} className="fill-[#00B69B]/20" /> Done
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDashboardCompleteTask(task._id || task.id)}
+                                  className="text-[11px] font-bold py-1 px-2.5 rounded-lg bg-[#00B69B]/15 hover:bg-[#00B69B]/25 text-[#00B69B] border border-[#00B69B]/30 flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-sm"
+                                  title="Mark this assigned task as completed"
+                                >
+                                  <CheckCircle2 size={12} />
+                                  <span>Complete Task</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Dashboard Sections: Team Directory + Security Architecture */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">

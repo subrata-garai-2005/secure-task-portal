@@ -3,9 +3,27 @@
 
 const SECRET_PATTERNS = [
   {
+    id: "jwt_token",
+    type: "JWT Authentication Token",
+    pattern: /(?:bearer\s+)?eyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}(?:\.[A-Za-z0-9_-]{4,})?/gi,
+    severity: "critical",
+  },
+  {
+    id: "api_key",
+    type: "API Key (Secret Credential)",
+    pattern: /(?:(?:x-)?api[_-]?key|apikey)\s*[:=]\s*["']?([a-zA-Z0-9_\-\.]{8,})["']?/gi,
+    severity: "critical",
+  },
+  {
+    id: "auth_token",
+    type: "Authentication / Access Token",
+    pattern: /(?:access[_-]?token|auth[_-]?token|refresh[_-]?token|bearer[_-]?token|token\s*[:=]|bearer\s+[a-zA-Z0-9_\-\.]{10,})\s*["']?([a-zA-Z0-9_\-\.]{8,})?["']?/gi,
+    severity: "critical",
+  },
+  {
     id: "openai_key",
     type: "OpenAI / LLM API Key",
-    pattern: /sk-(?:proj-|svcacct-|none-)?[A-Za-z0-9_-]{24,}/g,
+    pattern: /sk-(?:proj-|svcacct-|none-)?[A-Za-z0-9_-]{20,}/g,
     severity: "critical",
   },
   {
@@ -23,7 +41,7 @@ const SECRET_PATTERNS = [
   {
     id: "aws_secret_key",
     type: "AWS Secret Access Key",
-    pattern: /(?:aws_secret_access_key|aws_secret|secret_key)\s*[:=]\s*['"]?([A-Za-z0-9/+=]{40})['"]?/gi,
+    pattern: /(?:aws_secret_access_key|aws_secret|secret_key)\s*[:=]\s*['"]?([A-Za-z0-9/+=]{30,})['"]?/gi,
     severity: "critical",
   },
   {
@@ -35,20 +53,14 @@ const SECRET_PATTERNS = [
   {
     id: "github_pat",
     type: "GitHub Personal Access Token",
-    pattern: /(?:ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|gho_[A-Za-z0-9]{36})/g,
+    pattern: /(?:ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|gho_[A-Za-z0-9]{36})/g,
     severity: "critical",
   },
   {
     id: "stripe_key",
     type: "Stripe Live Secret Key",
-    pattern: /(?:sk|rk)_live_[0-9a-zA-Z]{24,}/g,
+    pattern: /(?:sk|rk)_live_[0-9a-zA-Z]{20,}/g,
     severity: "critical",
-  },
-  {
-    id: "webhook_url",
-    type: "Webhook URL (Slack / Discord)",
-    pattern: /https:\/\/(?:hooks\.slack\.com\/services\/[A-Za-z0-9_/]+|discord(?:app)?\.com\/api\/webhooks\/[0-9]+\/[A-Za-z0-9_-]+)/gi,
-    severity: "high",
   },
   {
     id: "private_key",
@@ -57,15 +69,21 @@ const SECRET_PATTERNS = [
     severity: "critical",
   },
   {
-    id: "jwt_token",
-    type: "JWT Authentication Token",
-    pattern: /eyJ[A-Za-z0-9-_]{15,}\.[A-Za-z0-9-_]{15,}\.[A-Za-z0-9-_]{15,}/g,
+    id: "generic_secret",
+    type: "Secret Key / Client Secret",
+    pattern: /(?:client[_-]?secret|secret[_-]?key|app[_-]?secret)\s*[:=]\s*["']?([a-zA-Z0-9_\-\.]{8,})["']?/gi,
     severity: "high",
   },
   {
     id: "hardcoded_password",
-    type: "Hardcoded Password / Auth Token",
-    pattern: /(?:password|client_secret|auth_token)\s*[:=]\s*["']([^"'\s]{8,})["']/gi,
+    type: "Hardcoded Password / Credential",
+    pattern: /(?:password|passwd|user_password)\s*[:=]\s*["']([^"'\s]{8,})["']/gi,
+    severity: "high",
+  },
+  {
+    id: "webhook_url",
+    type: "Webhook URL (Slack / Discord)",
+    pattern: /https:\/\/(?:hooks\.slack\.com\/services\/[A-Za-z0-9_/]+|discord(?:app)?\.com\/api\/webhooks\/[0-9]+\/[A-Za-z0-9_-]+)/gi,
     severity: "high",
   },
 ];
