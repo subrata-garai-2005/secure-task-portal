@@ -3,7 +3,7 @@ import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ListTodo, BarChart3, User, Settings, Activity,
-  Search, LogOut
+  Shield, Search, LogOut
 } from "lucide-react";
 
 const CommandPalette = ({ onNavigate, onLogout }) => {

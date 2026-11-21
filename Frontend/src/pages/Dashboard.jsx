@@ -259,6 +259,9 @@ const Dashboard = () => {
                 </table>
               </div>
             )}
+            <p className="page__note">
+              Role-based access controls dictate task permissions across all accounts.
+            </p>
           </div>
         );
 
@@ -268,62 +271,55 @@ const Dashboard = () => {
             <div className="page__header">
               <div>
                 <h1 className="page__title">Dashboard</h1>
-                <p className="page__subtitle">
-                  Welcome back, {user?.username}! Overview of tasks, team workload, and project progress.
-                </p>
+                <p className="page__subtitle">Welcome back, {user?.username}! Overview of your workload, tasks and team metrics</p>
               </div>
               <div className="page__actions">
                 <button
                   onClick={() => setActivePage("tasks")}
                   className="btn btn--primary flex items-center gap-1.5"
                 >
-                  <ListTodo size={14} />
                   Go to Tasks
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Signature 4-KPI Grid */}
+            {/* DashStack Signature 4-KPI Grid */}
             <div className="stats-grid">
               <StatsCard
                 label="Total Tasks"
                 value={String(dashboardTasks.length)}
                 icon={<ListTodo size={24} />}
                 color="#4880FF"
-                trendText="All project tasks"
+                trend={12}
+                trendText="Active project items"
                 delay={0}
-              />
-              <StatsCard
-                label="Pending Tasks"
-                value={String(dashboardTasks.filter((t) => t.status !== "done").length)}
-                icon={<Clock size={24} />}
-                color="#FEC53D"
-                trendText="Awaiting completion"
-                delay={0.05}
               />
               <StatsCard
                 label="Completed Tasks"
                 value={String(dashboardTasks.filter((t) => t.status === "done").length)}
                 icon={<CheckCircle2 size={24} />}
                 color="#00B69B"
-                trendText={
-                  dashboardTasks.length > 0
-                    ? `${Math.round(
-                        (dashboardTasks.filter((t) => t.status === "done").length /
-                          dashboardTasks.length) *
-                          100
-                      )}% completion rate`
-                    : "No tasks created yet"
-                }
+                trend={Math.round((dashboardTasks.filter((t) => t.status === "done").length / (dashboardTasks.length || 1)) * 100)}
+                trendText="% completion rate"
+                delay={0.05}
+              />
+              <StatsCard
+                label="Pending Tasks"
+                value={String(dashboardTasks.filter((t) => t.status !== "done").length)}
+                icon={<Clock size={24} />}
+                color="#FEC53D"
+                trend={dashboardTasks.filter((t) => t.status !== "done").length}
+                trendText="Awaiting completion"
                 delay={0.1}
               />
               <StatsCard
-                label="Team Members"
+                label="Total Users"
                 value={String(data?.users?.length || 1)}
                 icon={<Users size={24} />}
                 color="#8280FF"
-                trendText="Active accounts"
+                trend={data?.users?.length || 1}
+                trendText="Registered accounts"
                 delay={0.15}
               />
             </div>
@@ -385,13 +381,15 @@ const Dashboard = () => {
                   )}
 
                   {myTasks.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--text-muted)] border border-dashed border-[var(--border-color)] rounded-xl">
-                      <UserCheck size={28} className="mx-auto mb-2 opacity-40 text-[#4880FF]" />
-                      <p className="text-xs font-semibold">No assigned tasks found.</p>
-                      <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-[var(--border-color)] rounded-xl">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/10 text-[#4880FF] flex items-center justify-center mb-3">
+                        <UserCheck size={22} />
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">No assigned tasks found.</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm">
                         {user?.role === "admin"
                           ? "You can create and assign tasks to users on the Tasks page."
-                          : "When an administrator assigns a task to you, it will appear here."}
+                          : "When an administrator assigns a task to you, it will appear here for completion."}
                       </p>
                     </div>
                   ) : (
@@ -459,7 +457,7 @@ const Dashboard = () => {
               );
             })()}
 
-            {/* Dashboard Sections: Team Directory + Security Architecture */}
+            {/* Dashboard Sections: Team Directory + Task Distribution */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               {/* Left Column: Recent Users Quick Table */}
               <div className="lg:col-span-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
@@ -527,53 +525,39 @@ const Dashboard = () => {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-base font-bold text-[var(--text-primary)]">Task Progress</h3>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Status breakdown across active tasks</p>
+                      <h3 className="text-base font-bold text-[var(--text-primary)]">Task Distribution</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Real-time status of all project tasks</p>
                     </div>
-                    <span className="text-xs font-bold text-[#4880FF] bg-[#4880FF]/10 px-2.5 py-1 rounded-full border border-[#4880FF]/20">
-                      {dashboardTasks.length > 0
-                        ? `${Math.round(
-                            (dashboardTasks.filter((t) => t.status === "done").length /
-                              dashboardTasks.length) *
-                              100
-                          )}% Done`
-                        : "0% Done"}
-                    </span>
+                    <span className="badge badge--info">{dashboardTasks.length} Total</span>
                   </div>
 
                   {(() => {
                     const total = dashboardTasks.length || 1;
-                    const counts = {
-                      todo: dashboardTasks.filter((t) => t.status === "todo").length,
-                      in_progress: dashboardTasks.filter((t) => t.status === "in_progress").length,
-                      review: dashboardTasks.filter((t) => t.status === "review").length,
-                      done: dashboardTasks.filter((t) => t.status === "done").length,
-                    };
+                    const doneCount = dashboardTasks.filter((t) => t.status === "done").length;
+                    const inProgressCount = dashboardTasks.filter((t) => t.status === "in_progress").length;
+                    const todoCount = dashboardTasks.filter((t) => t.status === "todo" || !t.status).length;
+
                     const items = [
-                      { label: "To Do", count: counts.todo, bg: "bg-gray-400" },
-                      { label: "In Progress", count: counts.in_progress, bg: "bg-[#4880FF]" },
-                      { label: "In Review", count: counts.review, bg: "bg-[#FEC53D]" },
-                      { label: "Completed", count: counts.done, bg: "bg-[#00B69B]" },
+                      { label: "Completed", count: doneCount, color: "bg-[#00B69B]", textColor: "text-[#00B69B]" },
+                      { label: "In Progress", count: inProgressCount, color: "bg-[#4880FF]", textColor: "text-[#4880FF]" },
+                      { label: "To Do", count: todoCount, color: "bg-[#FEC53D]", textColor: "text-[#FEC53D]" },
                     ];
 
                     return (
-                      <div className="flex flex-col gap-3 mt-2">
+                      <div className="flex flex-col gap-4 mt-2">
                         {items.map((it) => {
-                          const pct = dashboardTasks.length > 0 ? Math.round((it.count / total) * 100) : 0;
+                          const pct = Math.round((it.count / total) * 100);
                           return (
                             <div key={it.label} className="p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)]">
-                              <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-                                <span className="text-[var(--text-primary)] flex items-center gap-2">
-                                  <span className={`w-2 h-2 rounded-full ${it.bg}`} />
-                                  {it.label}
-                                </span>
-                                <span className="text-[var(--text-muted)]">
-                                  {it.count} task{it.count !== 1 ? "s" : ""} ({pct}%)
+                              <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
+                                <span className="text-[var(--text-primary)] font-bold">{it.label}</span>
+                                <span className={it.textColor}>
+                                  {it.count} ({pct}%)
                                 </span>
                               </div>
-                              <div className="w-full bg-[var(--bg-secondary)] h-1.5 rounded-full overflow-hidden">
+                              <div className="w-full bg-[var(--bg-secondary)] h-2 rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full ${it.bg} transition-all duration-500`}
+                                  className={`h-full ${it.color} transition-all duration-500`}
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>

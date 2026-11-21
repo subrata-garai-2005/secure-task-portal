@@ -35,7 +35,7 @@ const SecretLeakModal = ({ findings = [], onAutoRedact, onEditManually }) => {
             </div>
             <h2 className="sec-modal-title" style={{ color: "#fef08a" }}>Security Alert Triggered</h2>
             <p className="sec-modal-subtitle">
-              Plaintext credential exposure was intercepted by the In-App Security Guard (OWASP A02).
+              Plaintext credential exposure was intercepted by the In-App Security Guard.
             </p>
           </div>
 

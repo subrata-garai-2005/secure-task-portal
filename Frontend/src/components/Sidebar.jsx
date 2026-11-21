@@ -2,7 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, ListTodo, BarChart3, Users, Settings, Activity,
-  LogOut, ChevronLeft, ChevronRight, Layers, User
+  ShieldCheck, LogOut, ChevronLeft, ChevronRight, Layers, User, Zap
 } from "lucide-react";
 
 const navGroups = [
