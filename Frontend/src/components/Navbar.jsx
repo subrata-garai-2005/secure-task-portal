@@ -12,9 +12,6 @@ const Navbar = () => {
         </div>
         <div className="flex items-center">
           <span className="font-extrabold text-lg text-[var(--text-primary)]">Dash<span className="text-[#4880FF]">Stack</span></span>
-          <span className="ml-3 text-[11px] font-bold bg-emerald-500/10 text-[#00B69B] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <ShieldCheck size={12} /> Protected
-          </span>
         </div>
       </div>
       <div className="flex items-center gap-4">
